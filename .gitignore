@@ -1,0 +1,60 @@
+# ─── General OS / Editor Files ─────────────────────────
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ─── Flutter / Dart ─────────────────────────────────
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+**/doc/api/
+
+# iOS / Xcode
+ios/Pods/
+ios/Flutter/.last_build_id
+ios/Runner.xcworkspace/
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Android / Gradle
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+
+# Linux / macOS / Windows folders
+linux/flutter/
+macos/Flutter/
+windows/flutter/
+
+# Symbolication / Obfuscation
+app.*.symbols
+app.*.map.json
+
+# Migration / temporary
+migrate_working_dir/
+.history/
+.build/
+.buildlog/
+.swiftpm/
+
+# ─── Optional Generated / Temporary Files ───────────
+*.lock
+*.log
+*.tmp
+*.bak
+*.swp
