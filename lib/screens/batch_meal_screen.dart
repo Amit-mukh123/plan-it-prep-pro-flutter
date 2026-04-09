@@ -536,7 +536,7 @@ class _InputCardState extends State<_InputCard> {
     setState(() => _isLocalLoading = true);
 
     // Perceived complexity delay
-    await Future.delayed(const Duration(milliseconds: 1200));
+    await Future.delayed(const Duration(milliseconds: 900));
 
     if (mounted) {
       widget.onGenerate();

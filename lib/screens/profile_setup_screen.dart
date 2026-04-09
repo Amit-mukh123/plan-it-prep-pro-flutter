@@ -13,12 +13,58 @@ class ProfileSetupScreen extends StatefulWidget {
 }
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+  // --- 1. TextEditingControllers for all text inputs ---
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _targetWeightController = TextEditingController();
+
+  // --- 2. State variables for selection inputs ---
   int _dietIndex = 0;
   String? _selectedGender;
+
   final _diets = ['Vegetarian', 'Non-Veg', 'Vegan'];
   final _dietIcons = [Icons.spa_rounded, Icons.egg_rounded, Icons.eco_rounded];
-
   final _genders = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
+  // --- 3. JSON data state ---
+  Map<String, dynamic> userData = {};
+
+  // --- 4. Logic to capture all inputs and print JSON ---
+  void saveUserData() {
+    setState(() {
+      userData = {
+        "user_id": "11122",
+        "data": {
+          "full_name": _fullNameController.text,
+          "gender": _selectedGender ?? "",
+          "age": _ageController.text,
+          "height": _heightController.text,
+          "weight": _weightController.text,
+          "target_weight": _targetWeightController.text,
+          "diet": _diets[_dietIndex], // Captures currently selected diet string
+        },
+      };
+    });
+
+    // Print the final JSON structure
+    print("User Data Captured: $userData");
+
+    // Existing navigation logic
+    Get.toNamed('/user-goal');
+  }
+
+  @override
+  void dispose() {
+    // Clean up controllers when the widget is removed from the tree
+    _fullNameController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    _targetWeightController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,27 +76,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Progress bar
-              // ClipRRect(
-              //   borderRadius: BorderRadius.circular(2),
-              //   child: const LinearProgressIndicator(
-              //     value: 0.4,
-              //     minHeight: 4,
-              //     backgroundColor: AppColors.outline,
-              //     valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              //   ),
-              // ),
-              // Align(
-              //   alignment: Alignment.centerRight,
-              //   child: Padding(
-              //     padding: const EdgeInsets.only(top: 4, bottom: 20),
-              //     child: Text(
-              //       'Step 2 of 5',
-              //       style: Theme.of(context).textTheme.bodySmall,
-              //     ),
-              //   ),
-              // ),
-
               Text(
                 'Set up your profile',
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -62,7 +87,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Avatar upload
+              // Avatar upload (Static UI)
               Center(
                 child: Stack(
                   children: [
@@ -103,11 +128,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Full name
+              // Full name input
               _Label('Full Name'),
               const SizedBox(height: 6),
-              const TextField(
-                decoration: InputDecoration(hintText: 'Anika Sharma'),
+              TextField(
+                controller: _fullNameController,
+                decoration: const InputDecoration(hintText: 'Anika Sharma'),
               ),
               const SizedBox(height: 12),
 
@@ -126,7 +152,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Age + Height
+              // Age + Height row
               Row(
                 children: [
                   Expanded(
@@ -135,9 +161,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       children: [
                         _Label('Age'),
                         const SizedBox(height: 6),
-                        const TextField(
+                        TextField(
+                          controller: _ageController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(hintText: '24'),
+                          decoration: const InputDecoration(hintText: '24'),
                         ),
                       ],
                     ),
@@ -149,9 +176,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       children: [
                         _Label('Height (cm)'),
                         const SizedBox(height: 6),
-                        const TextField(
+                        TextField(
+                          controller: _heightController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(hintText: '165'),
+                          decoration: const InputDecoration(hintText: '165'),
                         ),
                       ],
                     ),
@@ -160,15 +188,27 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 12),
 
+              // Weight input
               _Label('Weight (kg)'),
               const SizedBox(height: 6),
-              const TextField(
+              TextField(
+                controller: _weightController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(hintText: '60'),
+                decoration: const InputDecoration(hintText: '60'),
+              ),
+              const SizedBox(height: 12),
+
+              // Target Weight input
+              _Label('Target Weight (kg)'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _targetWeightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(hintText: '55'),
               ),
               const SizedBox(height: 16),
 
-              // Diet preference
+              // Diet preference selection
               Text(
                 'Diet Preference',
                 style: GoogleFonts.dmSans(
@@ -230,11 +270,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
+              // Continue Button triggers saveUserData
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () => Get.toNamed('/user-goal'),
+                  onPressed: saveUserData,
                   child: const Text('Continue'),
                 ),
               ),

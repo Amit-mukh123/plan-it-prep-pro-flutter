@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 import '../theme/app_theme.dart';
-import 'main_shell.dart';
+import '../providers/auth_provider.dart';
 
-class OtpScreen extends StatefulWidget {
+class OtpScreen extends ConsumerStatefulWidget {
   const OtpScreen({super.key});
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
+class _OtpScreenState extends ConsumerState<OtpScreen> {
   final List<TextEditingController> _controllers = List.generate(
     6,
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+
+  // Retrieving the phone number passed from LoginScreen
+  final String phoneNumber = Get.arguments ?? "your number";
 
   @override
   void dispose() {
@@ -26,8 +29,53 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
+  Future<void> _handleVerifyOtp() async {
+    // Combine the 6 controller values into a single string
+    String otp = _controllers.map((c) => c.text).join();
+
+    if (otp.length < 6) {
+      Get.snackbar(
+        "Invalid OTP",
+        "Please enter the full 6-digit code",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    final Map<String, dynamic> body = {"phone_number": phoneNumber, "otp": otp};
+
+    final bool isSuccess = await ref
+        .read(authProvider.notifier)
+        .verifyOtp(body);
+
+    if (isSuccess) {
+      Get.snackbar(
+        "Verified",
+        "OTP Verified Successfully",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.primary,
+        colorText: Colors.white,
+      );
+      Get.toNamed('/profile-setup');
+    } else {
+      Get.snackbar(
+        "Verification Failed",
+        "Invalid OTP code, please try again",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      // Optional: Navigate back to login if required by logic
+      // Get.offAllNamed('/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(authProvider).isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
@@ -57,7 +105,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   children: [
                     TextSpan(
-                      text: '+91 98765 43210',
+                      text: phoneNumber,
                       style: GoogleFonts.dmSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -68,7 +116,6 @@ class _OtpScreenState extends State<OtpScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // OTP inputs
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(6, (i) {
@@ -79,6 +126,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     child: TextFormField(
                       controller: _controllers[i],
                       focusNode: _focusNodes[i],
+                      enabled: !isLoading,
                       maxLength: 1,
                       textAlign: TextAlign.center,
                       keyboardType: TextInputType.number,
@@ -107,19 +155,30 @@ class _OtpScreenState extends State<OtpScreen> {
                       onChanged: (v) {
                         if (v.isNotEmpty && i < 5) {
                           _focusNodes[i + 1].requestFocus();
+                        } else if (v.isEmpty && i > 0) {
+                          _focusNodes[i - 1].requestFocus();
                         }
                       },
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () => Get.toNamed('/profile-setup'),
-                  child: const Text('Verify & Continue'),
+                  onPressed: isLoading ? null : _handleVerifyOtp,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Verify & Continue'),
                 ),
               ),
               const SizedBox(height: 16),

@@ -88,7 +88,7 @@ class WelcomeScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: () => Get.toNamed('/login'),
+                    onPressed: () => Get.toNamed('/register'),
                     icon: const Icon(Icons.arrow_forward_rounded),
                     label: const Text('Get Started'),
                   ),

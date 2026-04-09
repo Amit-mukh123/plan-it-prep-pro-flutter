@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added Riverpod import
 import 'package:get/get.dart';
 import 'theme/app_theme.dart';
-import 'routes/app_routes.dart'; // Import your updated routes
+import 'routes/app_routes.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,12 @@ void main() {
     ),
   );
 
-  runApp(const PlanitPrepApp());
+  // Wrapped PlanitPrepApp with ProviderScope to enable Riverpod
+  runApp(
+    const ProviderScope(
+      child: PlanitPrepApp(),
+    ),
+  );
 }
 
 class PlanitPrepApp extends StatelessWidget {
@@ -31,7 +37,6 @@ class PlanitPrepApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Changed MaterialApp to GetMaterialApp to support GetX routing
     return GetMaterialApp(
       title: 'PlanitPrep',
       debugShowCheckedModeBanner: false,

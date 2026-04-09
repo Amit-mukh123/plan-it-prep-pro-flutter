@@ -11,6 +11,7 @@ import 'package:planit_prep_pro/screens/otp_screen.dart';
 import 'package:planit_prep_pro/screens/privacy_settings_screen.dart';
 import 'package:planit_prep_pro/screens/profile_setup_screen.dart';
 import 'package:planit_prep_pro/screens/progress_screen.dart';
+import 'package:planit_prep_pro/screens/register_screen.dart';
 import 'package:planit_prep_pro/screens/surprise_meal_screen.dart';
 import 'package:planit_prep_pro/screens/user_config_qs.dart';
 import 'package:planit_prep_pro/screens/welcome_screen.dart';
@@ -66,6 +67,8 @@ class AppPages {
       page: () => const NotificationsScreen(),
     ),
     GetPage(name: Routes.qs_and_ans, page: () => const QuestionnaireScreen()),
+
+    GetPage(name: Routes.register, page: () => const RegisterScreen()),
   ];
 }
 
@@ -88,6 +91,7 @@ abstract class Routes {
   static const mainShell = _Paths.mainShell;
   static const privacy = _Paths.privacy;
   static const qs_and_ans = _Paths.qs_and_ans;
+  static const register = _Paths.register;
 
   Routes._();
 }
@@ -96,6 +100,7 @@ abstract class _Paths {
   static const splash = '/splash';
   static const welcome = '/welcome';
   static const login = '/login';
+  static const register = '/register';
   static const verifyOtp = '/verify-otp';
   static const home = '/home';
   static const dietPlan = '/diet-plan';
