@@ -14,7 +14,7 @@ class ApiController {
         connectTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json; charset=UTF-8",
           "Accept": "application/json",
         },
       ),
@@ -31,14 +31,19 @@ class ApiController {
           final authState = ref.read(authProvider);
 
           //  Skip token for auth APIs
-          final isAuthApi = options.path.contains("send-otp") || options.path.contains("login") ||
+          final isAuthApi =
+              options.path.contains("send-otp") ||
+              options.path.contains("login") ||
               options.path.contains("register") ||
               options.path.contains("verify-otp");
 
           if (!isAuthApi && authState.accessToken != null) {
             options.headers["Authorization"] =
                 "Bearer ${authState.accessToken}";
+            print("access token is:  ${authState.accessToken}");
           }
+
+          print("access token is:  ${authState.accessToken}");
 
           return handler.next(options);
         },
@@ -67,10 +72,7 @@ class ApiController {
 
       switch (method.toUpperCase()) {
         case "GET":
-          response = await _dio.get(
-            path,
-            queryParameters: queryParams,
-          );
+          response = await _dio.get(path, queryParameters: queryParams);
           break;
 
         case "POST":
@@ -126,7 +128,8 @@ class ApiController {
     } else if (e.type == DioExceptionType.receiveTimeout) {
       message = "Server took too long to respond.";
     } else if (e.type == DioExceptionType.badResponse) {
-      message = e.response?.data["message"] ??
+      message =
+          e.response?.data["message"] ??
           "Server error (${e.response?.statusCode})";
     } else if (e.type == DioExceptionType.cancel) {
       message = "Request was cancelled";

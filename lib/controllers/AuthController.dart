@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:planit_prep_pro/controllers/ApiController.dart';
@@ -13,21 +14,41 @@ class AuthController extends StateNotifier<AuthState> {
 
   ApiController get api => ref.read(apiControllerProvider);
 
+  // Helper for consistent error reporting
+  void _showError(String message) {
+    Get.snackbar(
+      "Error",
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+    );
+  }
+
   // LOGIN -> navigate to verify otp
   Future<bool> login(Map<String, dynamic> body) async {
     state = state.copyWith(isLoading: true);
+    try {
+      final response = await api.sendRequest(
+        path: "/send-otp",
+        method: "POST",
+        data: body,
+      );
 
-    final response = await api.sendRequest(
-      path: "/send-otp",
-      method: "POST",
-      data: body,
-    );
-
-    if (response["status"] == true) {
-      state = state.copyWith(isLoading: false);
-
-      return true;
-    } else {
+      if (response["status"] == true) {
+        state = state.copyWith(isLoading: false);
+        return true;
+      } else {
+        _showError(
+          response["message"] ?? "Failed to send OTP. Please try again.",
+        );
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+    } catch (e) {
+      _showError("Connection error. Please check your internet.");
       state = state.copyWith(isLoading: false);
       return false;
     }
@@ -36,29 +57,33 @@ class AuthController extends StateNotifier<AuthState> {
   // VERIFY OTP -> save tokens and navigate to profile setup
   Future<bool> verifyOtp(Map<String, dynamic> body) async {
     state = state.copyWith(isLoading: true);
-
-    final response = await api.sendRequest(
-      path: "/verify-otp",
-      method: "POST",
-      data: body,
-    );
-
-    if (response["status"] == true) {
-      final data = response["data"];
-
-      print(data["access_token"]);
-
-      await storage.saveTokens(data["access_token"], data["refresh_token"]);
-
-      state = state.copyWith(
-        isLoggedIn: true,
-        accessToken: data["access_token"],
-        refreshToken: data["refresh_token"],
-        isLoading: false,
+    try {
+      final response = await api.sendRequest(
+        path: "/verify-otp",
+        method: "POST",
+        data: body,
       );
 
-      return true;
-    } else {
+      if (response["status"] == true) {
+        final data = response["data"];
+
+        await storage.saveTokens(data["access_token"], data["refresh_token"]);
+
+        state = state.copyWith(
+          isLoggedIn: true,
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+          isLoading: false,
+        );
+
+        return true;
+      } else {
+        _showError(response["message"] ?? "Invalid OTP code.");
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+    } catch (e) {
+      _showError("Verification failed. Please try again.");
       state = state.copyWith(isLoading: false);
       return false;
     }
@@ -67,19 +92,25 @@ class AuthController extends StateNotifier<AuthState> {
   // REGISTER -> navigate to login
   Future<bool> register(Map<String, dynamic> body) async {
     state = state.copyWith(isLoading: true);
+    try {
+      final response = await api.sendRequest(
+        path: "/register",
+        method: "POST",
+        data: body,
+      );
 
-    final response = await api.sendRequest(
-      path: "/register",
-      method: "POST",
-      data: body,
-    );
+      print("API Response: $response");
 
-    print("API Response: $response");
-
-    if (response["status"] == true) {
-      state = state.copyWith(isLoading: false);
-      return true;
-    } else {
+      if (response["status"] == true) {
+        state = state.copyWith(isLoading: false);
+        return true;
+      } else {
+        _showError(response["message"] ?? "Registration failed.");
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+    } catch (e) {
+      _showError("Could not connect to server.");
       state = state.copyWith(isLoading: false);
       return false;
     }
@@ -87,26 +118,32 @@ class AuthController extends StateNotifier<AuthState> {
 
   // LOGOUT
   Future<void> logout() async {
-    state = state.copyWith(isLoading: true);
-
-    await storage.clear();
-
-    state = AuthState.initial();
+    try {
+      state = state.copyWith(isLoading: true);
+      await storage.clear();
+      state = AuthState.initial();
+    } catch (e) {
+      _showError("Logout failed.");
+      state = state.copyWith(isLoading: false);
+    }
   }
 
   // CHECK AUTH
   Future<void> checkAuth() async {
-    state = state.copyWith(isLoading: true);
+    try {
+      state = state.copyWith(isLoading: true);
+      final token = await storage.getAccessToken();
 
-    final token = await storage.getAccessToken();
-
-    if (token != null) {
-      state = state.copyWith(
-        isLoggedIn: true,
-        accessToken: token,
-        isLoading: false,
-      );
-    } else {
+      if (token != null) {
+        state = state.copyWith(
+          isLoggedIn: true,
+          accessToken: token,
+          isLoading: false,
+        );
+      } else {
+        state = AuthState.initial();
+      }
+    } catch (e) {
       state = AuthState.initial();
     }
   }

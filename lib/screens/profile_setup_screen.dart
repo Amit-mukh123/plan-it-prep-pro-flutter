@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import 'health_goals_screen.dart';
+import '../providers/user_provider.dart';
 
-class ProfileSetupScreen extends StatefulWidget {
+class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+  ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
-class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
-  // --- 1. TextEditingControllers for all text inputs ---
+class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
+  // --- TextEditingControllers ---
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
 
-  // --- 2. State variables for selection inputs ---
+  // --- Selection State ---
   int _dietIndex = 0;
   String? _selectedGender;
 
@@ -28,36 +28,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _dietIcons = [Icons.spa_rounded, Icons.egg_rounded, Icons.eco_rounded];
   final _genders = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
-  // --- 3. JSON data state ---
-  Map<String, dynamic> userData = {};
-
-  // --- 4. Logic to capture all inputs and print JSON ---
-  void saveUserData() {
-    setState(() {
-      userData = {
-        "user_id": "11122",
-        "data": {
-          "full_name": _fullNameController.text,
-          "gender": _selectedGender ?? "",
-          "age": _ageController.text,
-          "height": _heightController.text,
-          "weight": _weightController.text,
-          "target_weight": _targetWeightController.text,
-          "diet": _diets[_dietIndex], // Captures currently selected diet string
-        },
-      };
-    });
-
-    // Print the final JSON structure
-    print("User Data Captured: $userData");
-
-    // Existing navigation logic
-    Get.toNamed('/user-goal');
-  }
-
   @override
   void dispose() {
-    // Clean up controllers when the widget is removed from the tree
     _fullNameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
@@ -66,8 +38,51 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.dispose();
   }
 
+  /// Logic to capture inputs and call the storeUserProfileDetails function
+  Future<void> _handleSaveProfile() async {
+    // Basic validation
+    if (_fullNameController.text.trim().isEmpty || _selectedGender == null) {
+      Get.snackbar(
+        "Required Fields",
+        "Please fill in your name and gender",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orangeAccent,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+      return;
+    }
+
+    // Body formatted with "data" -> "answers" nesting
+    final Map<String, dynamic> body = {
+      "data": {
+          "full_name": _fullNameController.text.trim(),
+          "gender": _selectedGender,
+          "age": _ageController.text.trim(),
+          "height": _heightController.text.trim(),
+          "weight": _weightController.text.trim(),
+          "target_weight": _targetWeightController.text.trim(),
+          "diet": _diets[_dietIndex],
+        },
+    };
+
+    // Call the store function from UserController via Riverpod
+    final bool isSuccess = await ref
+        .read(userControllerProvider.notifier)
+        .storeUserProfileDetails(body);
+
+    if (isSuccess) {
+      // Success: Clear routes and go to goals screen
+      Get.offNamed('/user-goal');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Watch the loading state (the boolean state of UserController)
+    final isLoading = ref.watch(userControllerProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
@@ -94,7 +109,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     Container(
                       width: 88,
                       height: 88,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.primaryContainer,
                         shape: BoxShape.circle,
                       ),
@@ -128,41 +143,42 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Full name input
-              _Label('Full Name'),
+              const _Label('Full Name'),
               const SizedBox(height: 6),
               TextField(
                 controller: _fullNameController,
+                enabled: !isLoading,
                 decoration: const InputDecoration(hintText: 'Anika Sharma'),
               ),
               const SizedBox(height: 12),
 
-              // Gender Dropdown
-              _Label('Gender'),
+              const _Label('Gender'),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 value: _selectedGender,
                 items: _genders.map((String gender) {
                   return DropdownMenuItem(value: gender, child: Text(gender));
                 }).toList(),
-                onChanged: (value) => setState(() => _selectedGender = value),
+                onChanged: isLoading
+                    ? null
+                    : (value) => setState(() => _selectedGender = value),
                 decoration: const InputDecoration(hintText: 'Select Gender'),
                 dropdownColor: AppColors.surface,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
               ),
               const SizedBox(height: 12),
 
-              // Age + Height row
               Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Label('Age'),
+                        const _Label('Age'),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _ageController,
+                          enabled: !isLoading,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(hintText: '24'),
                         ),
@@ -174,10 +190,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Label('Height (cm)'),
+                        const _Label('Height (cm)'),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _heightController,
+                          enabled: !isLoading,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(hintText: '165'),
                         ),
@@ -188,27 +205,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Weight input
-              _Label('Weight (kg)'),
+              const _Label('Weight (kg)'),
               const SizedBox(height: 6),
               TextField(
                 controller: _weightController,
+                enabled: !isLoading,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(hintText: '60'),
               ),
               const SizedBox(height: 12),
 
-              // Target Weight input
-              _Label('Target Weight (kg)'),
+              const _Label('Target Weight (kg)'),
               const SizedBox(height: 6),
               TextField(
                 controller: _targetWeightController,
+                enabled: !isLoading,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(hintText: '55'),
               ),
               const SizedBox(height: 16),
 
-              // Diet preference selection
               Text(
                 'Diet Preference',
                 style: GoogleFonts.dmSans(
@@ -223,7 +239,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 children: List.generate(_diets.length, (i) {
                   final active = _dietIndex == i;
                   return GestureDetector(
-                    onTap: () => setState(() => _dietIndex = i),
+                    onTap: isLoading
+                        ? null
+                        : () => setState(() => _dietIndex = i),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -270,13 +288,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Continue Button triggers saveUserData
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 52,
                 child: ElevatedButton(
-                  onPressed: saveUserData,
-                  child: const Text('Continue'),
+                  onPressed: isLoading ? null : _handleSaveProfile,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Continue'),
                 ),
               ),
             ],
