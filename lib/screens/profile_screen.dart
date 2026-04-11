@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'package:planit_prep_pro/providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import '../routes/app_routes.dart';
@@ -45,11 +47,11 @@ class ProfileApiService {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -64,7 +66,8 @@ class ProfileScreen extends StatelessWidget {
             }
 
             final user = snapshot.data;
-            if (user == null) return const Center(child: Text("Error loading profile"));
+            if (user == null)
+              return const Center(child: Text("Error loading profile"));
 
             return Column(
               children: [
@@ -101,7 +104,10 @@ class ProfileScreen extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: const Center(
-                                child: Text('👩', style: TextStyle(fontSize: 36)),
+                                child: Text(
+                                  '👩',
+                                  style: TextStyle(fontSize: 36),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -129,11 +135,20 @@ class ProfileScreen extends StatelessWidget {
                         // Stats row
                         Row(
                           children: [
-                            _StatCard(value: user.mealsLogged, label: 'Meals logged'),
+                            _StatCard(
+                              value: user.mealsLogged,
+                              label: 'Meals logged',
+                            ),
                             const SizedBox(width: 8),
-                            _StatCard(value: user.dayStreak, label: 'Day streak'),
+                            _StatCard(
+                              value: user.dayStreak,
+                              label: 'Day streak',
+                            ),
                             const SizedBox(width: 8),
-                            _StatCard(value: user.adherence, label: 'Plan adherence'),
+                            _StatCard(
+                              value: user.adherence,
+                              label: 'Plan adherence',
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -150,9 +165,18 @@ class ProfileScreen extends StatelessWidget {
                                 spacing: 8,
                                 runSpacing: 6,
                                 children: const [
-                                  AppChip(label: '⚖️ Lose Weight', isActive: true),
-                                  AppChip(label: '🎯 1800 kcal/day', isActive: true),
-                                  AppChip(label: '💪 80g protein', isActive: true),
+                                  AppChip(
+                                    label: '⚖️ Lose Weight',
+                                    isActive: true,
+                                  ),
+                                  AppChip(
+                                    label: '🎯 1800 kcal/day',
+                                    isActive: true,
+                                  ),
+                                  AppChip(
+                                    label: '💪 80g protein',
+                                    isActive: true,
+                                  ),
                                 ],
                               ),
                             ],
@@ -193,9 +217,16 @@ class ProfileScreen extends StatelessWidget {
                               ),
                               // Logout Button
                               GestureDetector(
-                                onTap: () => Get.offAllNamed('/login'),
+                                onTap: () async {
+                                  await ref
+                                      .read(authProvider.notifier)
+                                      .logout();
+                                  Get.offAllNamed('/login');
+                                },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   color: Colors.transparent,
                                   child: Row(
                                     children: [
@@ -204,7 +235,9 @@ class ProfileScreen extends StatelessWidget {
                                         height: 36,
                                         decoration: BoxDecoration(
                                           color: AppColors.errorContainer,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.logout_rounded,

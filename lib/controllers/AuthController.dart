@@ -42,7 +42,7 @@ class AuthController extends StateNotifier<AuthState> {
         return true;
       } else {
         _showError(
-          response["message"] ?? "Failed to send OTP. Please try again.",
+          response["msg"] ?? "Failed to send OTP. Please try again.",
         );
         state = state.copyWith(isLoading: false);
         return false;
@@ -78,7 +78,7 @@ class AuthController extends StateNotifier<AuthState> {
 
         return true;
       } else {
-        _showError(response["message"] ?? "Invalid OTP code.");
+        _showError(response["msg"] ?? "Invalid OTP code.");
         state = state.copyWith(isLoading: false);
         return false;
       }
@@ -105,7 +105,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false);
         return true;
       } else {
-        _showError(response["message"] ?? "Registration failed.");
+        _showError(response["msg"] ?? "Registration failed.");
         state = state.copyWith(isLoading: false);
         return false;
       }
