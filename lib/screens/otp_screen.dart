@@ -58,7 +58,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         backgroundColor: AppColors.primary,
         colorText: Colors.white,
       );
-      Get.toNamed('/profile-setup');
+      Get.offAllNamed('/main-shell');
     } else {
       Get.snackbar(
         "Verification Failed",
@@ -68,7 +68,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         colorText: Colors.white,
       );
       // Optional: Navigate back to login if required by logic
-      // Get.offAllNamed('/login');
+       Get.offAllNamed('/login');
     }
   }
 

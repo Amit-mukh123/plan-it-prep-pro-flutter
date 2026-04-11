@@ -1,179 +1,156 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:planit_prep_pro/providers/AiResponse_provider.dart';
+import 'package:planit_prep_pro/providers/user_provider.dart';
 import '../models/app_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/change_meal_sheet.dart';
 
-class HomeScreen extends StatelessWidget {
+// ─── SAFE PARSING HELPERS ──────────────────────────────────────────
+
+int safeInt(dynamic value, {int defaultValue = 0}) {
+  if (value == null) return defaultValue;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  final String stringValue = value.toString().trim();
+  final match = RegExp(r'(\d+)').firstMatch(stringValue);
+  if (match != null) return int.tryParse(match.group(0)!) ?? defaultValue;
+  return defaultValue;
+}
+
+double safeDouble(dynamic value, {double defaultValue = 0.0}) {
+  if (value == null) return defaultValue;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  final String stringValue = value.toString().trim();
+  final match = RegExp(r'(\d+(\.\d+)?)').firstMatch(stringValue);
+  if (match != null) return double.tryParse(match.group(0)!) ?? defaultValue;
+  return defaultValue;
+}
+
+// ───────────────────────────────────────────────────────────────────
+
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
-  // ─── Dummy JSON Data ───────────────────────────────
-  static const Map<String, dynamic> _summaryJson = {
-    "date": "Tuesday, 14 Jan",
-    "greeting": "Good morning, Anika! 🌿",
-    "caloriesDone": 900,
-    "caloriesTotal": 1800,
-    "water": "2.1 L",
-    "steps": "6,240",
-    "protein": "54g",
-    "mealsDone": "3 / 4",
-    "progress": 0.5,
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  Map<String, dynamic>? _mealPlanData;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserSummary();
+      _fetchMealPlan(refresh: false);
+    });
+  }
+
+  Future<void> _fetchMealPlan({required bool refresh}) async {
+    final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final body = {"date": currentDate, "refresh": refresh};
+
+    final response = await ref
+        .read(aiResponseControllerProvider.notifier)
+        .generateMealPlan(body);
+
+    debugPrint("Final Data received in UI: $response");
+
+    if (response != null) {
+      setState(() {
+        _mealPlanData = response;
+      });
+
+      await _loadUserSummary(); //loading user summary details
+
+      if (response['meals'] != null) {
+        debugPrint("Meals Count: ${(response['meals'] as List).length}");
+      }
+    } else {
+      debugPrint("Response was null from controller.");
+    }
+  }
+
+  Map<String, dynamic> _summaryData = {
+    "date": "",
+    "greeting": "Hello!",
+    "caloriesDone": 0,
+    "caloriesTotal": 2000,
+    "water": "0",
+    "steps": "0",
+    "protein": "0",
+    "mealsDone": "0",
+    "progress": 0.0,
   };
 
-  static const List<Map<String, dynamic>> _mealsJson = [
-    {
-      "id": "1",
-      "mealType": "Breakfast",
-      "time": "08:30 AM",
-      "name": "Oatmeal with Berries",
-      "emoji": "🥣",
-      "bgColor": "0xFFFFF7ED",
-      "calories": 320,
-      "protein": "12g",
-      "carbs": "45g",
-      "fat": "8g",
-      "prepTime": "10 min",
-      "tags": ["Fiber Rich", "Vegetarian"],
-      "ingredients": [
-        "🌾 Rolled Oats",
-        "🫐 Blueberries",
-        "🥛 Almond Milk",
-        "🍯 Honey",
-      ],
-      "steps": [
-        "Boil milk in a small saucepan.",
-        "Add oats and cook for 5 minutes until soft.",
-        "Top with fresh berries and a drizzle of honey.",
-      ],
-    },
-    {
-      "id": "2",
-      "mealType": "Lunch",
-      "time": "01:00 PM",
-      "name": "Quinoa Veggie Bowl",
-      "emoji": "🥗",
-      "bgColor": "0xFFD1FAE5",
-      "calories": 420,
-      "protein": "18g",
-      "carbs": "58g",
-      "fat": "9g",
-      "prepTime": "25 min",
-      "tags": ["High protein", "Vegetarian"],
-      "ingredients": [
-        "🌾 Quinoa",
-        "🥕 Carrot",
-        "🥦 Broccoli",
-        "🍅 Tomato",
-        "🫒 Olive oil",
-      ],
-      "steps": [
-        "Rinse quinoa thoroughly and cook in 2 cups of water for 15 minutes until fluffy.",
-        "Steam broccoli and carrots for 5 minutes until tender-crisp.",
-        "Sauté garlic in olive oil, add tomatoes and cook for 3 minutes.",
-        "Combine everything in a bowl and drizzle with tahini dressing.",
-      ],
-    },
-  ];
+  Future<void> _loadUserSummary() async {
+    final summary = await ref
+        .read(userControllerProvider.notifier)
+        .getUserSummary();
+
+    if (summary != null && mounted) {
+      setState(() {
+        _summaryData.clear();
+        _summaryData.addAll({
+          "date": summary["date"] ?? "",
+          "greeting": summary["greeting"] ?? "Hello!",
+          "caloriesDone": summary["caloriesDone"] ?? 0,
+          "caloriesTotal": summary["caloriesTotal"] ?? 2000,
+          "water": summary["water"] ?? "0",
+          "steps": summary["steps"] ?? "0",
+          "protein": summary["protein"] ?? "0",
+          "mealsDone": summary["mealsDone"] ?? "0",
+          "progress": summary["progress"] ?? 0.0,
+        });
+      });
+
+      debugPrint("Updated Summary: $_summaryData"); //  DEBUG
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(aiResponseControllerProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Top bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Row(
-                children: [
-                  Text(
-                    'PlanitPrep',
-                    style: GoogleFonts.dmSerifDisplay(
-                      fontSize: 22,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => Get.toNamed('/notifications'),
-                    behavior: HitTestBehavior.opaque,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const AppIconButton(icon: Icons.notifications_rounded),
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: AppColors.error,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.surface,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Scrollable content
+            _buildAppBar(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Daily Summary Card using JSON
-                    _SummaryCard(data: _summaryJson),
-                    const SizedBox(height: 4),
-
-                    // Today's Meals using JSON
-                    SectionHeader(title: "Today's Meals", action: 'See plan'),
-
-                    Column(
-                      children: _mealsJson
-                          .map(
-                            (mealData) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: MealCard(
-                                mealData: mealData, // Passing the full JSON map
-                                onTap: () => Get.toNamed(
-                                  '/meal-details',
-                                  arguments: mealData,
-                                ),
-                                onChangeTap: () => ChangeMealSheet.show(
-                                  context,
-                                  mealData['mealType'],
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-
-                    AddMealButton(
-                      onTap: () => ChangeMealSheet.show(context, 'Snack'),
-                    ),
-
-                    // Quick Actions
-                    SectionHeader(title: 'Quick Actions'),
-                    _QuickActionsGrid(),
-                    const SizedBox(height: 8),
-                  ],
+              child: RefreshIndicator(
+                onRefresh: () => _fetchMealPlan(refresh: true),
+                color: AppColors.primary,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SummaryCard(data: _summaryData),
+                      const SizedBox(height: 16),
+                      _buildMealSectionHeader(isLoading),
+                      const SizedBox(height: 8),
+                      _buildMealList(isLoading),
+                      const SizedBox(height: 12),
+                      AddMealButton(
+                        onTap: () => ChangeMealSheet.show(context, 'Snack'),
+                      ),
+                      const SectionHeader(title: 'Quick Actions'),
+                      _QuickActionsGrid(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -182,151 +159,221 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Row(
+        children: [
+          Text(
+            'PlanitPrep',
+            style: GoogleFonts.dmSerifDisplay(
+              fontSize: 24,
+              color: AppColors.primaryDark,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => Get.toNamed('/notifications'),
+            behavior: HitTestBehavior.opaque,
+            child: const Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AppIconButton(icon: Icons.notifications_rounded),
+                Positioned(top: 6, right: 6, child: _NotificationBadge()),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealSectionHeader(bool isLoading) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const SectionHeader(title: "Today's Meals"),
+        IconButton(
+          onPressed: isLoading ? null : () => _fetchMealPlan(refresh: true),
+          icon: isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : const Icon(
+                  Icons.refresh_rounded,
+                  size: 22,
+                  color: AppColors.primary,
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMealList(bool isLoading) {
+    if (_mealPlanData != null && _mealPlanData!['meals'] != null) {
+      final List meals = _mealPlanData!['meals'];
+      return Column(
+        children: meals.map((rawMeal) {
+          final sanitizedMeal = Map<String, dynamic>.from(rawMeal);
+          sanitizedMeal['calories'] = safeInt(rawMeal['calories']);
+          sanitizedMeal['protein'] = safeInt(rawMeal['protein']);
+          sanitizedMeal['carbs'] = safeInt(rawMeal['carbs']);
+          sanitizedMeal['fat'] = safeInt(rawMeal['fat']);
+          sanitizedMeal['prepTime'] = safeInt(rawMeal['prepTime']);
+
+          return MealCard(
+            mealData: sanitizedMeal,
+            onTap: () => Get.toNamed('/meal-details', arguments: sanitizedMeal),
+            onChangeTap: () =>
+                ChangeMealSheet.show(context, sanitizedMeal['mealType']),
+          );
+        }).toList(),
+      );
+    }
+
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Text("No meal plan generated for today."),
+      ),
+    );
+  }
 }
 
-// ─── Daily Summary Card ───────────────────────────────
+// ─── INTERNAL COMPONENTS ──────────────────────────────────────────
+
+class _NotificationBadge extends StatelessWidget {
+  const _NotificationBadge();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 9,
+      height: 9,
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.surface, width: 1.5),
+      ),
+    );
+  }
+}
+
 class _SummaryCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const _SummaryCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final int done = safeInt(data['caloriesDone']);
+    final int total = safeInt(data['caloriesTotal'], defaultValue: 2000);
+    final double progress = safeDouble(data['progress']);
+    final int remaining = (total - done).clamp(0, total);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['date'],
+                    data['date']?.toString().toUpperCase() ?? "",
                     style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
                       color: Colors.white70,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    data['greeting'],
+                    data['greeting']?.toString() ?? "Hello!",
                     style: GoogleFonts.dmSans(
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
                 ],
               ),
+              // Arrow button to Progress Screen
               GestureDetector(
                 onTap: () => Get.toNamed('/my-progress'),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white30),
                   ),
                   child: const Icon(
                     Icons.arrow_forward_ios_rounded,
                     color: Colors.white,
-                    size: 16,
+                    size: 18,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Row(
             children: [
-              SizedBox(
-                width: 72,
-                height: 72,
-                child: Stack(
-                  children: [
-                    CustomPaint(
-                      size: const Size(72, 72),
-                      painter: _RingPainter(data['progress']),
-                    ),
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${(data['progress'] * 100).toInt()}%',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            'done',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 9,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Calories today',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 13,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  RichText(
-                    text: TextSpan(
-                      text: '${data['caloriesDone']} ',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: '/ ${data['caloriesTotal']}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${data['caloriesTotal'] - data['caloriesDone']} kcal remaining',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
+              _ProgressRing(progress: progress),
+              const SizedBox(width: 24),
+              _CalorieInfo(done: done, total: total, remaining: remaining),
             ],
           ),
+          const SizedBox(height: 24),
+          const Divider(color: Colors.white24, height: 1),
           const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _StatItem(value: data['water'], label: '💧 Water intake'),
-              _StatItem(value: data['steps'], label: '👟 Steps today'),
-              _StatItem(value: data['protein'], label: '🥩 Protein'),
-              _StatItem(value: data['mealsDone'], label: '🍽 Meals done'),
+              _StatItem(
+                value: data['water']?.toString() ?? "0",
+                label: 'Water',
+              ),
+              _StatItem(
+                value: data['steps']?.toString() ?? "0",
+                label: 'Steps',
+              ),
+              _StatItem(
+                value: data['protein']?.toString() ?? "0",
+                label: 'Protein',
+              ),
+              _StatItem(
+                value: data['mealsDone']?.toString() ?? "0",
+                label: 'Meals',
+              ),
             ],
           ),
         ],
@@ -335,31 +382,105 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
+class _ProgressRing extends StatelessWidget {
+  final double progress;
+  const _ProgressRing({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 76,
+      height: 76,
+      child: Stack(
+        children: [
+          CustomPaint(
+            size: const Size(76, 76),
+            painter: _RingPainter(progress),
+          ),
+          Center(
+            child: Text(
+              '${(progress * 100).toInt()}%',
+              style: GoogleFonts.dmSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalorieInfo extends StatelessWidget {
+  final int done, total, remaining;
+  const _CalorieInfo({
+    required this.done,
+    required this.total,
+    required this.remaining,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'CALORIES CONSUMED',
+          style: GoogleFonts.dmSans(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: Colors.white60,
+          ),
+        ),
+        RichText(
+          text: TextSpan(
+            text: '$done ',
+            style: GoogleFonts.dmSans(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+            children: [
+              TextSpan(
+                text: '/ $total kcal',
+                style: GoogleFonts.dmSans(fontSize: 14, color: Colors.white60),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          '$remaining kcal left for today',
+          style: GoogleFonts.dmSans(fontSize: 12, color: Colors.white70),
+        ),
+      ],
+    );
+  }
+}
+
 class _StatItem extends StatelessWidget {
-  final String value;
-  final String label;
+  final String value, label;
   const _StatItem({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.dmSans(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.dmSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
-          Text(
-            label,
-            style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white70),
-          ),
-        ],
-      ),
+        ),
+        Text(
+          label,
+          style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white60),
+        ),
+      ],
     );
   }
 }
@@ -370,12 +491,12 @@ class _RingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 6.0;
+    const stroke = 7.0;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width / 2) - stroke / 2;
 
     final bgPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withOpacity(0.15)
       ..strokeWidth = stroke
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius, bgPaint);
@@ -388,14 +509,14 @@ class _RingPainter extends CustomPainter {
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
-      2 * math.pi * progress,
+      2 * math.pi * progress.clamp(0.0, 1.0),
       false,
       fgPaint,
     );
   }
 
   @override
-  bool shouldRepaint(_) => false;
+  bool shouldRepaint(_) => true;
 }
 
 class _QuickActionsGrid extends StatelessWidget {
@@ -406,25 +527,25 @@ class _QuickActionsGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.95,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.9,
       ),
       itemCount: AppData.quickActions.length,
       itemBuilder: (_, i) {
         final a = AppData.quickActions[i];
         return InkWell(
           onTap: () => Get.toNamed(a.route),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.07),
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -432,13 +553,13 @@ class _QuickActionsGrid extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: a.iconBg,
-                    borderRadius: BorderRadius.circular(12),
+                    color: a.iconBg.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(a.icon, size: 22, color: a.iconColor),
+                  child: Icon(a.icon, size: 24, color: a.iconColor),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -446,9 +567,8 @@ class _QuickActionsGrid extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.dmSans(
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary,
-                    height: 1.3,
                   ),
                 ),
               ],

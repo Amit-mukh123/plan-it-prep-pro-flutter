@@ -11,8 +11,10 @@ class ApiController {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 20),
-        receiveTimeout: const Duration(seconds: 20),
+        // Increased timeouts to 60s for low internet stability
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 60),
         headers: {
           "Content-Type": "application/json; charset=UTF-8",
           "Accept": "application/json",
@@ -23,14 +25,12 @@ class ApiController {
     _initializeInterceptors();
   }
 
-  //  Interceptors
   void _initializeInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final authState = ref.read(authProvider);
 
-          //  Skip token for auth APIs
           final isAuthApi =
               options.path.contains("send-otp") ||
               options.path.contains("login") ||
@@ -40,71 +40,38 @@ class ApiController {
           if (!isAuthApi && authState.accessToken != null) {
             options.headers["Authorization"] =
                 "Bearer ${authState.accessToken}";
-            print("access token is:  ${authState.accessToken}");
           }
-
-          print("access token is:  ${authState.accessToken}");
 
           return handler.next(options);
         },
-
         onError: (error, handler) async {
-          //  Handle 401 (token expired / invalid)
+          // Handle Unauthorized
           if (error.response?.statusCode == 401) {
             await ref.read(authProvider.notifier).logout();
           }
-
           return handler.next(error);
         },
       ),
     );
   }
 
-  //  Universal API Call Function
   Future<Map<String, dynamic>> sendRequest({
     required String path,
-    required String method, // GET, POST, PUT, DELETE
+    required String method,
     Map<String, dynamic>? data,
     Map<String, dynamic>? queryParams,
   }) async {
     try {
-      Response response;
+      Response response = await _dio.request(
+        path,
+        data: data,
+        queryParameters: queryParams,
+        options: Options(method: method.toUpperCase()),
+      );
 
-      switch (method.toUpperCase()) {
-        case "GET":
-          response = await _dio.get(path, queryParameters: queryParams);
-          break;
-
-        case "POST":
-          response = await _dio.post(
-            path,
-            data: data,
-            queryParameters: queryParams,
-          );
-          break;
-
-        case "PUT":
-          response = await _dio.put(
-            path,
-            data: data,
-            queryParameters: queryParams,
-          );
-          break;
-
-        case "DELETE":
-          response = await _dio.delete(
-            path,
-            data: data,
-            queryParameters: queryParams,
-          );
-          break;
-
-        default:
-          throw Exception("Invalid HTTP method");
-      }
-
+      // Backend usually returns a map, but we check if response.data is null
       return {
-        "status": true,
+        "status": response.data["status"] ?? true,
         "data": response.data,
         "statusCode": response.statusCode,
       };
@@ -113,34 +80,50 @@ class ApiController {
     } catch (e) {
       return {
         "status": false,
-        "message": "Something went wrong",
+        "message": "An unexpected error occurred",
         "error": e.toString(),
       };
     }
   }
 
-  // Error Handler (Very Important)
   Map<String, dynamic> _handleDioError(DioException e) {
-    String message = "Unexpected error occurred";
+    String message = "Something went wrong";
 
-    if (e.type == DioExceptionType.connectionTimeout) {
-      message = "Connection timeout. Please try again.";
-    } else if (e.type == DioExceptionType.receiveTimeout) {
-      message = "Server took too long to respond.";
-    } else if (e.type == DioExceptionType.badResponse) {
-      message =
-          e.response?.data["message"] ??
-          "Server error (${e.response?.statusCode})";
-    } else if (e.type == DioExceptionType.cancel) {
-      message = "Request was cancelled";
-    } else if (e.type == DioExceptionType.connectionError) {
-      message = "No internet connection";
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        message =
+            "Poor internet connection. Please check your signal and try again.";
+        break;
+      case DioExceptionType.badResponse:
+        // Handle cases where the server sends back an error message in the body
+        message =
+            e.response?.data?["message"] ??
+            "Server Error (${e.response?.statusCode})";
+        break;
+      case DioExceptionType.cancel:
+        message = "Request was cancelled";
+        break;
+      case DioExceptionType.connectionError:
+        // This is triggered for socket exceptions, DNS issues, or no physical link
+        message =
+            "Cannot reach server. Check your internet connection or server status.";
+        break;
+      case DioExceptionType.unknown:
+      default:
+        if (e.message != null && e.message!.contains("SocketException")) {
+          message = "Network error. Please verify you are online.";
+        } else {
+          message = "An unknown network error occurred.";
+        }
+        break;
     }
 
     return {
       "status": false,
       "message": message,
-      "error": e.response?.data ?? e.toString(),
+      "error": e.response?.data ?? e.error?.toString() ?? e.message,
       "statusCode": e.response?.statusCode,
     };
   }

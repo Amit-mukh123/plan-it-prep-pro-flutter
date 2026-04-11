@@ -76,4 +76,44 @@ class UserController extends StateNotifier<bool> {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> getUserSummary() async {
+    state = true; // loading start
+
+    try {
+      final response = await api.sendRequest(
+        path: "/get-user-summary",
+        method: "GET",
+      );
+
+      debugPrint("User Summary Raw Response: $response");
+
+      // 1. Check top-level status
+      if (response != null && response["status"] == true) {
+        state = false;
+        
+        final level1 = response["data"];
+
+        // 2. Handle Triple Wrap Logic: response['data']['data']
+        // This checks if the inner data also contains a 'status' and 'data' key
+        if (level1 is Map && level1["status"] == true) {
+          final actualSummary = level1["data"];
+          debugPrint(" Extracted Summary Data: $actualSummary");
+          return Map<String, dynamic>.from(actualSummary);
+        }
+
+        // 3. Fallback for Double Wrap: response['data']
+        return Map<String, dynamic>.from(level1);
+      } else {
+        state = false;
+        _showError(response?["message"] ?? "Failed to fetch user summary.");
+        return null;
+      }
+    } catch (e) {
+      state = false;
+      debugPrint(" Summary Fetch Error: $e");
+      _showError("Connection error. Could not fetch summary.");
+      return null;
+    }
+  }
 }

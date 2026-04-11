@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'common_widgets.dart';
@@ -18,88 +17,94 @@ class MealCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Parse color from hex string in JSON
-    final Color bgColor = Color(int.parse(mealData['bgColor']));
+    // Robust Color Parsing
+    final Color accentColor = _parseColor(mealData['bgColor']);
 
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          // Entire card is wrapped in a GestureDetector for navigation
-          // We use InkWell or a nested GestureDetector inside the Row to ensure
-          // specific elements (like the swap button) can have their own logic.
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            splashColor: accentColor.withOpacity(0.1),
+            highlightColor: Colors.transparent,
+            child: SizedBox(
+              height: 100,
               child: Row(
                 children: [
-                  // Emoji thumbnail from JSON
+                  // Leading Emoji Section
                   Container(
-                    width: 82,
-                    height: 88,
+                    width: 90,
+                    height: double.infinity,
                     decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        bottomLeft: Radius.circular(16),
-                      ),
+                      color: accentColor.withOpacity(0.6),
                     ),
                     child: Center(
                       child: Text(
-                        mealData['emoji'],
-                        style: const TextStyle(fontSize: 36),
+                        mealData['emoji']?.toString() ?? '🍽️',
+                        style: const TextStyle(fontSize: 38),
                       ),
                     ),
                   ),
-                  // Content from JSON
+
+                  // Middle Content Section
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 11,
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '${mealData['mealType']} · ${mealData['time']}'
+                            '${mealData['mealType'] ?? ''} • ${mealData['time'] ?? ''}'
                                 .toUpperCase(),
                             style: GoogleFonts.dmSans(
                               fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.4,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
                               color: AppColors.textTertiary,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
-                            mealData['name'],
+                            mealData['name']?.toString() ?? 'Untitled Meal',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
-                              NutriBadge.cal('${mealData['calories']} kcal'),
+                              // 🔥 FIX: Explicitly convert to String to prevent TypeError
+                              NutriBadge.cal(
+                                '${mealData['calories']?.toString() ?? '0'} kcal',
+                              ),
                               if (mealData['protein'] != null) ...[
-                                const SizedBox(width: 4),
-                                NutriBadge.protein(mealData['protein']),
+                                const SizedBox(width: 6),
+                                // 🔥 FIX: Ensure protein is passed as a string/expected type
+                                NutriBadge.protein(
+                                  mealData['protein'].toString(),
+                                ),
                               ],
                             ],
                           ),
@@ -107,48 +112,63 @@ class MealCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Spacer to make room for the absolute positioned swap button if necessary
-                  const SizedBox(width: 50),
+
+                  // Action Button Section
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _SwapActionBtn(onTap: onChangeTap),
+                  ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
 
-          // Change button - Positioned to ensure it can be clicked independently
-          Positioned(
-            right: 10,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: GestureDetector(
-                onTap: onChangeTap,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.outlineStrong,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.swap_horiz_rounded,
-                    size: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
+  Color _parseColor(dynamic hex) {
+    try {
+      if (hex == null || hex is! String || !hex.startsWith('#')) {
+        return const Color(0xFFE0E0E0);
+      }
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return const Color(0xFFE0E0E0);
+    }
+  }
+}
+
+class _SwapActionBtn extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SwapActionBtn({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.bg,
+          border: Border.all(
+            color: AppColors.outlineStrong.withOpacity(0.5),
+            width: 1,
           ),
-        ],
+        ),
+        child: const Icon(
+          Icons.swap_horiz_rounded,
+          size: 18,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
 }
 
-// ─── Add Meal Button ─────────────────────────────────
 class AddMealButton extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -156,38 +176,41 @@ class AddMealButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.outlineStrong,
-            width: 2,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.add_circle_outline_rounded,
-              size: 20,
-              color: AppColors.primaryDark,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primaryDark.withOpacity(0.15),
+              width: 1.5,
+              style: BorderStyle.solid,
             ),
-            const SizedBox(width: 8),
-            Text(
-              'Add Meal',
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.add_rounded,
+                size: 20,
                 color: AppColors.primaryDark,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Text(
+                'Add Extra Meal',
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

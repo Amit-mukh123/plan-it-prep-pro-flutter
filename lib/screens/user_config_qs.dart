@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:planit_prep_pro/providers/user_provider.dart';
 import '../theme/app_theme.dart';
 
-// Enum for Days mapping
 enum CookingDay { mon, tue, wed, thu, fri, sat, sun }
 
-class QuestionnaireScreen extends StatefulWidget {
+class QuestionnaireScreen extends ConsumerStatefulWidget {
   const QuestionnaireScreen({super.key});
 
   @override
-  State<QuestionnaireScreen> createState() => _QuestionnaireScreenState();
+  ConsumerState<QuestionnaireScreen> createState() =>
+      _QuestionnaireScreenState();
 }
 
-class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
+class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   int _currentIndex = 0;
-  // Store all data here
   final Map<String, dynamic> _answers = {};
 
   final List<Map<String, dynamic>> _questions = [
@@ -97,8 +98,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
       "question": "What is your target daily calorie intake?",
       "type": "mcq_single",
       "options": [
-        {"text": "1200 kcal (Weight Loss)", "icon": Icons.local_fire_department_outlined},
-        {"text": "1500 kcal (Light Active)", "icon": Icons.directions_walk_rounded},
+        {
+          "text": "1200 kcal (Weight Loss)",
+          "icon": Icons.local_fire_department_outlined,
+        },
+        {
+          "text": "1500 kcal (Light Active)",
+          "icon": Icons.directions_walk_rounded,
+        },
         {"text": "1800 kcal (Moderate)", "icon": Icons.directions_run_rounded},
         {"text": "2200 kcal (Active)", "icon": Icons.fitness_center_rounded},
         {"text": "2500+ kcal (High)", "icon": Icons.sports_gymnastics_rounded},
@@ -107,7 +114,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     {
       "id": "cooking_day",
       "question": "Which day do you prefer to cook?",
-      "type": "mcq_multi", // Updated to multi-select
+      "type": "mcq_multi",
       "options": [
         {"text": "Monday", "value": 1, "icon": Icons.calendar_today_rounded},
         {"text": "Tuesday", "value": 2, "icon": Icons.calendar_today_rounded},
@@ -138,22 +145,32 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     });
   }
 
-  void saveUserDetails(Map<String, dynamic> data) {
-    // Function to handle the final JSON data
-    print("Saving User Details: $data");
+  Future<void> _saveUserDetails() async {
+    // Rewritten to match the requested JSON structure
+    final finalJson = {
+      "data": {"answers": _answers},
+    };
+
+    final bool isSuccess = await ref
+        .read(userControllerProvider.notifier)
+        .storeUserConfigDetails(finalJson);
+
+    if (isSuccess) {
+      Get.offAllNamed('/main-shell');
+    } else {
+      Get.snackbar(
+        "Error",
+        "Failed to save details. Please try again.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   void _nextQuestion() {
     if (_currentIndex < _questions.length - 1) {
       setState(() => _currentIndex++);
     } else {
-      // Generate final JSON
-      final finalJson = {
-        "user_id": "user_12345", // Placeholder ID
-        "answers": _answers,
-      };
-      saveUserDetails(finalJson);
-      Get.offAllNamed('/main-shell');
+      _saveUserDetails();
     }
   }
 
@@ -168,6 +185,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     final currentQuestion = _questions[_currentIndex];
     final progress = (_currentIndex + 1) / _questions.length;
     final selectedValue = _answers[currentQuestion['id']];
+    final isLoading = ref.watch(userControllerProvider);
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -184,7 +202,9 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                       value: progress,
                       minHeight: 4,
                       backgroundColor: AppColors.outline,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -225,30 +245,42 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        currentQuestion['type'] == "mcq_multi" 
-                          ? "Select all that apply." 
-                          : "Please select one option to continue.",
+                        currentQuestion['type'] == "mcq_multi"
+                            ? "Select all that apply."
+                            : "Please select one option to continue.",
                         style: GoogleFonts.dmSans(
                           fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 32),
-                      ...List.generate(currentQuestion['options'].length, (index) {
+                      ...List.generate(currentQuestion['options'].length, (
+                        index,
+                      ) {
                         final option = currentQuestion['options'][index];
                         bool isSelected = false;
-                        
+
                         if (currentQuestion['type'] == "mcq_single") {
                           isSelected = selectedValue == option['text'];
                         } else {
-                          isSelected = (selectedValue as List<int>?)?.contains(option['value']) ?? false;
+                          isSelected =
+                              (selectedValue as List<int>?)?.contains(
+                                option['value'],
+                              ) ??
+                              false;
                         }
 
                         return _OptionCard(
                           text: option['text'],
                           icon: option['icon'],
                           isSelected: isSelected,
-                          onTap: () => _handleSelection(currentQuestion['id'], currentQuestion['type'], option),
+                          onTap: isLoading
+                              ? () {}
+                              : () => _handleSelection(
+                                  currentQuestion['id'],
+                                  currentQuestion['type'],
+                                  option,
+                                ),
                         );
                       }),
                     ],
@@ -257,9 +289,15 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
               ),
             ),
             _BottomNav(
-              onBack: _currentIndex == 0 ? null : _previousQuestion,
-              onNext: (selectedValue == null || (selectedValue is List && selectedValue.isEmpty)) 
-                  ? null 
+              isLoading: isLoading,
+              onBack: (_currentIndex == 0 || isLoading)
+                  ? null
+                  : _previousQuestion,
+              onNext:
+                  (isLoading ||
+                      selectedValue == null ||
+                      (selectedValue is List && selectedValue.isEmpty))
+                  ? null
                   : _nextQuestion,
               isLast: _currentIndex == _questions.length - 1,
             ),
@@ -305,7 +343,9 @@ class _OptionCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.primaryDark
+                    : AppColors.textSecondary,
                 size: 24,
               ),
               const SizedBox(width: 16),
@@ -315,7 +355,9 @@ class _OptionCard extends StatelessWidget {
                   style: GoogleFonts.dmSans(
                     fontSize: 16,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                    color: isSelected
+                        ? AppColors.primaryDark
+                        : AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -337,8 +379,14 @@ class _BottomNav extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onNext;
   final bool isLast;
+  final bool isLoading;
 
-  const _BottomNav({this.onBack, this.onNext, required this.isLast});
+  const _BottomNav({
+    this.onBack,
+    this.onNext,
+    required this.isLast,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -357,10 +405,15 @@ class _BottomNav extends StatelessWidget {
                 onPressed: onBack,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   side: const BorderSide(color: AppColors.outlineStrong),
                 ),
-                child: Text('Back', style: GoogleFonts.dmSans(color: AppColors.textPrimary)),
+                child: Text(
+                  'Back',
+                  style: GoogleFonts.dmSans(color: AppColors.textPrimary),
+                ),
               ),
             ),
           if (onBack != null) const SizedBox(width: 12),
@@ -372,13 +425,24 @@ class _BottomNav extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
-              child: Text(
-                isLast ? 'Generate Plan' : 'Next',
-                style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
-              ),
+              child: isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      isLast ? 'Generate Plan' : 'Next',
+                      style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
+                    ),
             ),
           ),
         ],
