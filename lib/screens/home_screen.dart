@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:planit_prep_pro/providers/AiResponse_provider.dart';
 import 'package:planit_prep_pro/providers/user_provider.dart';
+import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
 import '../models/app_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
@@ -112,6 +113,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           "progress": summary["progress"] ?? 0.0,
         });
       });
+
+      // Update the Global Provider instead of a local variable
+      ref
+          .read(userSummaryProvider.notifier)
+          .update(
+            (state) => {
+              ...state, // keep existing fields
+              "date": summary["date"] ?? state["date"],
+              "greeting": summary["greeting"] ?? state["greeting"],
+              "caloriesDone": summary["caloriesDone"] ?? state["caloriesDone"],
+              "caloriesTotal":
+                  summary["caloriesTotal"] ?? state["caloriesTotal"],
+              "water": summary["water"] ?? state["water"],
+              "steps": summary["steps"] ?? state["steps"],
+              "protein": summary["protein"] ?? state["protein"],
+              "mealsDone": summary["mealsDone"] ?? state["mealsDone"],
+              "progress": summary["progress"] ?? state["progress"],
+              "name": summary["name"] ?? state["name"], // Capture name from API
+            },
+          );
 
       debugPrint("Updated Summary: $_summaryData"); //  DEBUG
     }
