@@ -114,12 +114,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         });
       });
 
-      // Update the Global Provider instead of a local variable
       ref
           .read(userSummaryProvider.notifier)
           .update(
             (state) => {
-              ...state, // keep existing fields
+              ...state,
               "date": summary["date"] ?? state["date"],
               "greeting": summary["greeting"] ?? state["greeting"],
               "caloriesDone": summary["caloriesDone"] ?? state["caloriesDone"],
@@ -130,11 +129,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               "protein": summary["protein"] ?? state["protein"],
               "mealsDone": summary["mealsDone"] ?? state["mealsDone"],
               "progress": summary["progress"] ?? state["progress"],
-              "name": summary["name"] ?? state["name"], // Capture name from API
+              "name": summary["name"] ?? state["name"],
             },
           );
 
-      debugPrint("Updated Summary: $_summaryData"); //  DEBUG
+      debugPrint("Updated Summary: $_summaryData");
     }
   }
 
@@ -145,13 +144,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
             _buildAppBar(),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => _fetchMealPlan(refresh: true),
+                onRefresh: () => _fetchMealPlan(refresh: false),
                 color: AppColors.primary,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -247,7 +245,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           sanitizedMeal['carbs'] = safeInt(rawMeal['carbs']);
           sanitizedMeal['fat'] = safeInt(rawMeal['fat']);
           sanitizedMeal['prepTime'] = safeInt(rawMeal['prepTime']);
-          // Explicitly ensure lists are passed through
           sanitizedMeal['ingredients'] = rawMeal['ingredients'] ?? [];
           sanitizedMeal['steps'] = rawMeal['steps'] ?? [];
           sanitizedMeal['tags'] = rawMeal['tags'] ?? [];
@@ -304,100 +301,158 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int done = safeInt(data['caloriesDone']);
-    final int total = safeInt(data['caloriesTotal'], defaultValue: 2000);
-    final double progress = safeDouble(data['progress']);
-    final int remaining = (total - done).clamp(0, total);
+    final int done = (data['caloriesDone'] ?? 0).toInt();
+    final int total = (data['caloriesTotal'] ?? 2000).toInt();
+    final double progress = (data['progress'] ?? 0.0).toDouble();
+    final int left = (total - done).clamp(0, total);
+
+    // Calculate dynamic progress for macros (fixing the 0 value issue)
+    // You can adjust the denominators (targets) based on your app's logic
+    double waterProgress = (safeDouble(data['water']) / 3.0).clamp(
+      0.0,
+      1.0,
+    ); // Target: 3L
+    double proteinProgress = (safeDouble(data['protein']) / 150.0).clamp(
+      0.0,
+      1.0,
+    ); // Target: 150g
+    double mealsProgress = (safeDouble(data['mealsDone']) / 4.0).clamp(
+      0.0,
+      1.0,
+    ); // Target: 4 meals
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: 4,
+      ), // Decreased vertical margin
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 16,
+      ), // Decreased vertical padding
       decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data['date']?.toString().toUpperCase() ?? "",
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data['greeting']?.toString() ?? "Hello!",
-                    style: GoogleFonts.dmSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+              Text(
+                data['date']?.toString().toUpperCase() ?? "SUNDAY, 1 APR",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  letterSpacing: 1.1,
+                  color: Colors.grey[400],
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              // Arrow button to Progress Screen
               GestureDetector(
                 onTap: () => Get.toNamed('/my-progress'),
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.grey[50],
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: Colors.white,
-                    size: 18,
+                    size: 12,
+                    color: Colors.grey[400],
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8), // Tighter spacing to decrease height
           Row(
             children: [
-              _ProgressRing(progress: progress),
-              const SizedBox(width: 24),
-              _CalorieInfo(done: done, total: total, remaining: remaining),
+              _CompactRing(
+                progress: progress,
+                size: 65, // Slightly smaller ring to save vertical space
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "$left",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 28, // Reduced font size slightly
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF1D1D1D),
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      "KCAL REMAINING",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 9, // Reduced font size slightly
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    "$done",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF6C63FF),
+                    ),
+                  ),
+                  Text(
+                    "EATEN",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 24),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0xFFF8F8F8), height: 1, thickness: 1.5),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _StatItem(
-                value: data['water']?.toString() ?? "0",
-                label: 'Water',
+              _MacroMini(
+                label: "Water",
+                value: "${data['water'] ?? 0}L",
+                color: Colors.blue,
+                progress: waterProgress, // Now dynamic
               ),
-              _StatItem(
-                value: data['steps']?.toString() ?? "0",
-                label: 'Steps',
+              _MacroMini(
+                label: "Protein",
+                value: "${data['protein'] ?? 0}g",
+                color: Colors.pink,
+                progress: proteinProgress, // Now dynamic
               ),
-              _StatItem(
-                value: data['protein']?.toString() ?? "0",
-                label: 'Protein',
-              ),
-              _StatItem(
-                value: data['mealsDone']?.toString() ?? "0",
-                label: 'Meals',
+              _MacroMini(
+                label: "Meals",
+                value: "${data['mealsDone'] ?? 0}",
+                color: Colors.orange,
+                progress: mealsProgress, // Now dynamic
               ),
             ],
           ),
@@ -407,43 +462,16 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _ProgressRing extends StatelessWidget {
+class _MacroMini extends StatelessWidget {
+  final String label, value;
+  final Color color;
   final double progress;
-  const _ProgressRing({required this.progress});
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 76,
-      height: 76,
-      child: Stack(
-        children: [
-          CustomPaint(
-            size: const Size(76, 76),
-            painter: _RingPainter(progress),
-          ),
-          Center(
-            child: Text(
-              '${(progress * 100).toInt()}%',
-              style: GoogleFonts.dmSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CalorieInfo extends StatelessWidget {
-  final int done, total, remaining;
-  const _CalorieInfo({
-    required this.done,
-    required this.total,
-    required this.remaining,
+  const _MacroMini({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.progress,
   });
 
   @override
@@ -452,85 +480,110 @@ class _CalorieInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'CALORIES CONSUMED',
-          style: GoogleFonts.dmSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            color: Colors.white60,
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1D1D1D),
           ),
         ),
-        RichText(
-          text: TextSpan(
-            text: '$done ',
-            style: GoogleFonts.dmSans(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-            children: [
-              TextSpan(
-                text: '/ $total kcal',
-                style: GoogleFonts.dmSans(fontSize: 14, color: Colors.white60),
+        const SizedBox(height: 4),
+        Container(
+          width: 70,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress, // This will now be 0 if the data is 0
+            child: Container(
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
+            ),
           ),
         ),
+        const SizedBox(height: 4),
         Text(
-          '$remaining kcal left for today',
-          style: GoogleFonts.dmSans(fontSize: 12, color: Colors.white70),
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            color: Colors.grey[400],
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String value, label;
-  const _StatItem({required this.value, required this.label});
+class _CompactRing extends StatelessWidget {
+  final double progress;
+  final double size;
+
+  const _CompactRing({required this.progress, required this.size});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: GoogleFonts.dmSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(size, size),
+            painter: _RingPainter(
+              progress: progress,
+              color: const Color(0xFF6C63FF),
+              strokeWidth: 6, // Slightly thinner stroke to match smaller size
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white60),
-        ),
-      ],
+          Text(
+            '${(progress * 100).toInt()}%',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF6C63FF),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _RingPainter extends CustomPainter {
   final double progress;
-  _RingPainter(this.progress);
+  final Color color;
+  final double strokeWidth;
+
+  _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.strokeWidth,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 7.0;
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width / 2) - stroke / 2;
+    final radius = (size.width / 2) - strokeWidth / 2;
 
     final bgPaint = Paint()
-      ..color = Colors.white.withOpacity(0.15)
-      ..strokeWidth = stroke
+      ..color = const Color(0xFFF3F3F3)
+      ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
-    canvas.drawCircle(center, radius, bgPaint);
 
     final fgPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = stroke
+      ..color = color
+      ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, bgPaint);
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
