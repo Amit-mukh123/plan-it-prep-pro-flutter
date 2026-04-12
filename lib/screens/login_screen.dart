@@ -15,6 +15,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  // Arguments are expected as a Map or similar; defaulting isRegister to false
+  final String phoneNumber = Get.arguments?['phone_number'] ?? "your number";
+  final bool isRegister = Get.arguments?['isRegister'] ?? false;
 
   @override
   void dispose() {
@@ -32,8 +35,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final bool isSuccess = await ref.read(authProvider.notifier).login(body);
 
     if (isSuccess) {
-      // Passing the phone number as an argument to the OTP screen
-      Get.toNamed('/verify-otp', arguments: _phoneController.text.trim());
+      // Passing the phone number and isRegister as false for login flow
+      Get.offNamed(
+        '/verify-otp',
+        arguments: {
+          'phone_number': _phoneController.text.trim(),
+          'isRegister': isRegister,
+        },
+      );
     } else {
       Get.snackbar(
         "Account not found",
@@ -53,122 +62,128 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 32),
-                _buildHeader(),
-                const SizedBox(height: 32),
-                const _Label('Country'),
-                const SizedBox(height: 8),
-                const _DropdownField(),
-                const SizedBox(height: 20),
-                const _Label('Phone Number'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _phoneController,
-                  enabled: !isLoading,
-                  keyboardType: TextInputType.phone,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Enter Phone Number',
-                    filled: true,
-                    fillColor: AppColors.surface,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.outlineStrong,
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  validator: (val) => (val == null || val.isEmpty)
-                      ? "Enter phone number"
-                      : null,
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.sms_rounded, size: 20),
-                              SizedBox(width: 10),
-                              Text(
-                                'Send OTP',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: GestureDetector(
-                    onTap: () => Get.toNamed('/register'),
-                    child: RichText(
-                      text: TextSpan(
-                        text: "Don't have an account? ",
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 32),
+                      _buildHeader(),
+                      const SizedBox(height: 32),
+                      const _Label('Country'),
+                      const SizedBox(height: 8),
+                      const _DropdownField(),
+                      const SizedBox(height: 20),
+                      const _Label('Phone Number'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _phoneController,
+                        enabled: !isLoading,
+                        keyboardType: TextInputType.phone,
                         style: GoogleFonts.dmSans(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
                         ),
-                        children: [
-                          TextSpan(
-                            text: 'Sign up',
-                            style: GoogleFonts.dmSans(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primaryDark,
+                        decoration: InputDecoration(
+                          hintText: 'Enter Phone Number',
+                          filled: true,
+                          fillColor: AppColors.surface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.outlineStrong,
+                              width: 1.5,
                             ),
                           ),
-                        ],
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        validator: (val) => (val == null || val.isEmpty)
+                            ? "Enter phone number"
+                            : null,
                       ),
-                    ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.sms_rounded, size: 20),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      'Send OTP',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => Get.toNamed('/register'),
+                          child: RichText(
+                            text: TextSpan(
+                              text: "Don't have an account? ",
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Sign up',
+                                  style: GoogleFonts.dmSans(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

@@ -7,30 +7,53 @@ import '../widgets/common_widgets.dart';
 class MealDetailScreen extends StatelessWidget {
   const MealDetailScreen({super.key});
 
+  // Helper to safely parse the background color string
+  Color _parseColor(dynamic colorData) {
+    try {
+      if (colorData == null) return AppColors.primaryContainer;
+      String colorStr = colorData.toString();
+      if (colorStr.startsWith('#')) {
+        colorStr = colorStr.replaceFirst('#', '0xFF');
+      } else if (!colorStr.startsWith('0x')) {
+        colorStr = '0xFF$colorStr';
+      }
+      return Color(int.parse(colorStr));
+    } catch (e) {
+      return AppColors.primaryContainer; // Fallback
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Retrieve the JSON map passed from the MealCard
-    final Map<String, dynamic> meal = Get.arguments;
+    final Map<String, dynamic> meal = Get.arguments ?? {};
 
-    final List<String> ingredients = List<String>.from(meal['ingredients']);
-    final List<String> steps = List<String>.from(meal['steps']);
-    final Color bgColor = Color(int.parse(meal['bgColor']));
+    // Defensive parsing for lists and basic types
+    final List<String> ingredients = List<String>.from(
+      meal['ingredients'] ?? [],
+    );
+    final List<String> steps = List<String>.from(meal['steps'] ?? []);
+    final List<String> tags = List<String>.from(meal['tags'] ?? []);
+    final Color bgColor = _parseColor(meal['bgColor']);
 
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
-          // Hero image section using JSON data
+          // Hero Image Section
           Stack(
             children: [
               Container(
-                height: 200,
+                height: 220,
                 width: double.infinity,
-                color: bgColor,
+                decoration: BoxDecoration(
+                  color: bgColor.withOpacity(
+                    0.2,
+                  ), // Use opacity for better contrast
+                ),
                 child: Center(
                   child: Text(
-                    meal['emoji'],
-                    style: const TextStyle(fontSize: 72),
+                    meal['emoji'] ?? '🍲',
+                    style: const TextStyle(fontSize: 80),
                   ),
                 ),
               ),
@@ -41,28 +64,13 @@ class MealDetailScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      GestureDetector(
+                      _CircleButton(
+                        icon: Icons.arrow_back_rounded,
                         onTap: () => Get.back(),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.85),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.arrow_back_rounded,
-                              size: 22, color: AppColors.textPrimary),
-                        ),
                       ),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.favorite_border_rounded,
-                            size: 22, color: AppColors.textPrimary),
+                      _CircleButton(
+                        icon: Icons.favorite_border_rounded,
+                        onTap: () {},
                       ),
                     ],
                   ),
@@ -71,14 +79,14 @@ class MealDetailScreen extends StatelessWidget {
             ],
           ),
 
-          // Content section
+          // Content Section
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title + Badge from JSON
+                  // Title and Header info
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -87,118 +95,207 @@ class MealDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              meal['name'],
-                              style: Theme.of(context).textTheme.headlineSmall,
+                              meal['name'] ?? 'Unknown Meal',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 6),
                             Text(
-                              '${meal['tags'].join(' · ')} · ${meal['prepTime']}',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              '${tags.isNotEmpty ? tags.join(' · ') : 'Healthy'} · ${meal['prepTime'] ?? 0} mins',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
                       ),
-                      NutriBadge.cal('${meal['calories']} kcal'),
+                      NutriBadge.cal('${meal['calories'] ?? 0} kcal'),
                     ],
                   ),
 
-                  // Nutri row from JSON
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Row(
-                      children: [
-                        NutriBox(
-                            value: '${meal['calories']}',
-                            label: 'kcal',
-                            valueColor: AppColors.calText),
-                        const SizedBox(width: 8),
-                        NutriBox(
-                            value: meal['protein'],
-                            label: 'protein',
-                            valueColor: AppColors.proText),
-                        const SizedBox(width: 8),
-                        NutriBox(
-                            value: meal['carbs'],
-                            label: 'carbs',
-                            valueColor: AppColors.carbText),
-                        const SizedBox(width: 8),
-                        NutriBox(
-                            value: meal['fat'],
-                            label: 'fat',
-                            valueColor: AppColors.fatText),
-                      ],
+                  const SizedBox(height: 20),
+                  // Nutrition Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _NutriStat(
+                        value: '${meal['protein'] ?? 0}g',
+                        label: 'Protein',
+                        color: AppColors.proText,
+                      ),
+                      _NutriStat(
+                        value: '${meal['carbs'] ?? 0}g',
+                        label: 'Carbs',
+                        color: AppColors.carbText,
+                      ),
+                      _NutriStat(
+                        value: '${meal['fat'] ?? 0}g',
+                        label: 'Fat',
+                        color: AppColors.fatText,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+
+                  // Ingredients Section
+                  Text(
+                    'Ingredients',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Divider(),
-                  const SizedBox(height: 10),
-
-                  // Ingredients from JSON
-                  Text('Ingredients',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: ingredients.map((ing) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(ing,
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.textPrimary)),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.close_rounded,
-                                size: 14, color: AppColors.textTertiary),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ingredients
+                        .map((ing) => _IngredientChip(label: ing))
+                        .toList(),
                   ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 10),
 
-                  // Instructions from JSON
-                  Text('Instructions',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
-                  ...steps.asMap().entries.map((e) => _StepItem(
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+
+                  // Instructions (Steps) Section
+                  Text(
+                    'Instructions',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (steps.isEmpty)
+                    const Text("No instructions provided.")
+                  else
+                    ...steps.asMap().entries.map(
+                      (e) => _StepItem(
                         number: e.key + 1,
                         text: e.value,
                         isLast: e.key == steps.length - 1,
-                      )),
-                  const SizedBox(height: 20),
+                      ),
+                    ),
 
-                  // Action Button
-                  Row(
-                    children: [
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add to Plan'),
-                          ),
+                  const SizedBox(height: 32),
+
+                  // Bottom Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                    ],
+                      onPressed: () {},
+                      icon: const Icon(Icons.add_task_rounded),
+                      label: const Text(
+                        'Add to Log',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── REUSABLE INTERNAL WIDGETS ────────────────────────────────────
+
+class _CircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          ],
+        ),
+        child: Icon(icon, size: 22, color: AppColors.textPrimary),
+      ),
+    );
+  }
+}
+
+class _NutriStat extends StatelessWidget {
+  final String value, label;
+  final Color color;
+  const _NutriStat({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: Get.width * 0.28,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline.withOpacity(0.5)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.dmSans(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IngredientChip extends StatelessWidget {
+  final String label;
+  const _IngredientChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -217,39 +314,33 @@ class _StepItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : const Border(
-                bottom: BorderSide(color: AppColors.outline, width: 1)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            margin: const EdgeInsets.only(top: 1),
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '$number',
-                style: GoogleFonts.dmSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryDark,
-                ),
+          CircleAvatar(
+            radius: 12,
+            backgroundColor: AppColors.primaryContainer,
+            child: Text(
+              '$number',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryDark,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+            child: Text(
+              text,
+              style: GoogleFonts.dmSans(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
         ],
       ),

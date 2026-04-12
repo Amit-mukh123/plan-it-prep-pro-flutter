@@ -50,7 +50,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _showSnackBar("Success", "Account created successfully!", isError: false);
 
       // Use Get.offNamed to prevent the user from going back to the registration form
-      Get.offNamed('/login');
+      Get.offNamed(
+        '/login',
+        arguments: {
+          'phone_number': _phoneController.text.trim(),
+          'isRegister': true, // or false, depending on your logic
+        },
+      );
     } else {
       _showSnackBar(
         "Registration Failed",

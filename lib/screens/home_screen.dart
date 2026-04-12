@@ -226,6 +226,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           sanitizedMeal['carbs'] = safeInt(rawMeal['carbs']);
           sanitizedMeal['fat'] = safeInt(rawMeal['fat']);
           sanitizedMeal['prepTime'] = safeInt(rawMeal['prepTime']);
+          // Explicitly ensure lists are passed through
+          sanitizedMeal['ingredients'] = rawMeal['ingredients'] ?? [];
+          sanitizedMeal['steps'] = rawMeal['steps'] ?? [];
+          sanitizedMeal['tags'] = rawMeal['tags'] ?? [];
 
           return MealCard(
             mealData: sanitizedMeal,

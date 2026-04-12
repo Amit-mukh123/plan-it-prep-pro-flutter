@@ -19,8 +19,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
-  // Retrieving the phone number passed from LoginScreen
-  final String phoneNumber = Get.arguments ?? "your number";
+  // Retrieving arguments passed from previous screen
+  // Arguments are expected as a Map or similar; defaulting isRegister to false
+  final String phoneNumber = Get.arguments?['phone_number'] ?? "your number";
+  final bool isRegister = Get.arguments?['isRegister'] ?? false;
 
   @override
   void dispose() {
@@ -58,7 +60,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         backgroundColor: AppColors.primary,
         colorText: Colors.white,
       );
-      Get.offAllNamed('/main-shell');
+
+      // Conditional navigation based on isRegister flag
+      if (isRegister) {
+        Get.offAllNamed('/profile-setup');
+      } else {
+        Get.offAllNamed('/main-shell');
+      }
     } else {
       Get.snackbar(
         "Verification Failed",
@@ -68,7 +76,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         colorText: Colors.white,
       );
       // Optional: Navigate back to login if required by logic
-       Get.offAllNamed('/login');
+      Get.offAllNamed('/login');
     }
   }
 
