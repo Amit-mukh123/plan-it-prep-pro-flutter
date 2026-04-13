@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:planit_prep_pro/providers/auth_provider.dart';
-// Import the provider file where you defined userSummaryProvider
-
 import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
@@ -17,7 +15,10 @@ class ProfileScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     // Watch the global user summary state
-    final userData = ref.watch(userSummaryProvider);
+    final rawState = ref.watch(userSummaryProvider);
+
+    // Access the 'data' map from your JSON structure
+    final userData = rawState['data'] ?? {};
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -67,11 +68,6 @@ class ProfileScreen extends ConsumerWidget {
                               userData['name'] ?? 'User',
                               style: textTheme.headlineSmall,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Age: ${userData['age'] ?? '--'} · ${userData['height'] ?? '--'} cm · ${userData['weight'] ?? '--'} kg',
-                              style: textTheme.bodyMedium,
-                            ),
                             const SizedBox(height: 6),
                             AppChip(
                               label: userData['dietType'] ?? 'Not Set',
@@ -82,61 +78,50 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
-                    // Stats row using global provider data
+                    // Vital Metrics Section (Age, Height, Weight)
                     Row(
                       children: [
                         _StatCard(
-                          value: "${userData['mealsDone'] ?? '0'}",
-                          label: 'Meals logged',
+                          icon: Icons.cake_rounded,
+                          value: "${userData['age'] ?? '--'}",
+                          label: 'Age',
                         ),
                         const SizedBox(width: 8),
                         _StatCard(
-                          value: "${userData['steps'] ?? '0'}",
-                          label: 'Daily Steps',
+                          icon: Icons.height_rounded,
+                          value: "${userData['height'] ?? '--'} cm",
+                          label: 'Height',
                         ),
                         const SizedBox(width: 8),
                         _StatCard(
-                          value:
-                              "${userData['progress']?.toStringAsFixed(0) ?? '0'}%",
-                          label: 'Plan adherence',
+                          icon: Icons.monitor_weight_rounded,
+                          value: "${userData['weight'] ?? '--'} kg",
+                          label: 'Weight',
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    // My Goals
-                    AppCard(
-                      marginBottom: 12,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('My Goals', style: textTheme.titleMedium),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              const AppChip(
-                                label: '⚖️ Lose Weight',
-                                isActive: true,
-                              ),
-                              AppChip(
-                                label:
-                                    '🎯 ${userData['caloriesTotal'] ?? '2000'} kcal/day',
-                                isActive: true,
-                              ),
-                              AppChip(
-                                label:
-                                    '💪 ${userData['protein'] ?? '0'}g protein',
-                                isActive: true,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    // Primary Stats
+                    Row(
+                      children: [
+                        _StatCard(
+                          icon: Icons.restaurant_menu_rounded,
+                          value: "${userData['mealsDone'] ?? '0'}",
+                          label: 'Meals logged',
+                        ),
+                        const SizedBox(width: 8),
+                        _StatCard(
+                          icon: Icons.track_changes_rounded,
+                          value:
+                              "${(userData['progress'] ?? 0).toStringAsFixed(0)}%",
+                          label: 'Adherence',
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 20),
 
                     // Settings List
                     AppCard(
@@ -147,15 +132,15 @@ class ProfileScreen extends ConsumerWidget {
                             iconColor: AppColors.primaryDark,
                             icon: Icons.restaurant_rounded,
                             label: 'Diet Preferences',
-                            route: '/diet-preferences',
+                            route: '/qs_and_ans',
                           ),
-                          _ClickableSettingsRow(
-                            iconBg: const Color(0xFFE0F2FE),
-                            iconColor: const Color(0xFF0369A1),
-                            icon: Icons.notifications_rounded,
-                            label: 'Notifications',
-                            route: '/notifications',
-                          ),
+                          // _ClickableSettingsRow(
+                          //   iconBg: const Color(0xFFE0F2FE),
+                          //   iconColor: const Color(0xFF0369A1),
+                          //   icon: Icons.notifications_rounded,
+                          //   label: 'Notifications',
+                          //   route: '/notifications',
+                          // ),
                           _ClickableSettingsRow(
                             iconBg: const Color(0xFFEDE9FE),
                             iconColor: const Color(0xFF6D28D9),
@@ -258,31 +243,39 @@ class _ClickableSettingsRow extends StatelessWidget {
 class _StatCard extends StatelessWidget {
   final String value;
   final String label;
+  final IconData icon;
 
-  const _StatCard({required this.value, required this.label});
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 3,
-              offset: const Offset(0, 1),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           children: [
+            Icon(icon, size: 20, color: AppColors.primaryDark.withOpacity(0.5)),
+            const SizedBox(height: 8),
             Text(
               value,
+              textAlign: TextAlign.center,
               style: GoogleFonts.dmSans(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.primaryDark,
               ),
@@ -291,7 +284,10 @@ class _StatCard extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontSize: 11,
+              ),
             ),
           ],
         ),

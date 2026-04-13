@@ -148,7 +148,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               TextField(
                 controller: _fullNameController,
                 enabled: !isLoading,
-                decoration: const InputDecoration(hintText: 'Anika Sharma'),
+                decoration: const InputDecoration(hintText: 'Enter Name'),
               ),
               const SizedBox(height: 12),
 
@@ -180,7 +180,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           controller: _ageController,
                           enabled: !isLoading,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(hintText: '24'),
+                          decoration: const InputDecoration(hintText: '00'),
                         ),
                       ],
                     ),
@@ -196,7 +196,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           controller: _heightController,
                           enabled: !isLoading,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(hintText: '165'),
+                          decoration: const InputDecoration(hintText: '00'),
                         ),
                       ],
                     ),
@@ -211,7 +211,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 controller: _weightController,
                 enabled: !isLoading,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: '60'),
+                decoration: const InputDecoration(hintText: '00'),
               ),
               const SizedBox(height: 12),
 
@@ -221,7 +221,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 controller: _targetWeightController,
                 enabled: !isLoading,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: '55'),
+                decoration: const InputDecoration(hintText: '00'),
               ),
               const SizedBox(height: 16),
 

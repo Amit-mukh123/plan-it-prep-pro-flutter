@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/app_data.dart';
+import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
+import 'package:planit_prep_pro/providers/meal_plan_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 
-class MealScreen extends StatefulWidget {
+class MealScreen extends ConsumerStatefulWidget {
   const MealScreen({super.key});
 
   @override
-  State<MealScreen> createState() => _MealScreenState();
+  ConsumerState<MealScreen> createState() => _MealScreenState();
 }
 
-class _MealScreenState extends State<MealScreen>
+class _MealScreenState extends ConsumerState<MealScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -19,7 +21,12 @@ class _MealScreenState extends State<MealScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    int initialIndex = DateTime.now().weekday - 1;
+    _tabController = TabController(
+      length: 7,
+      vsync: this,
+      initialIndex: initialIndex,
+    );
   }
 
   @override
@@ -30,6 +37,10 @@ class _MealScreenState extends State<MealScreen>
 
   @override
   Widget build(BuildContext context) {
+    // <-- REMOVED WidgetRef ref here
+    // In ConsumerStatefulWidget, 'ref' is available globally within the State class
+    final mealPlan = ref.watch(mealPlanStateProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
@@ -42,8 +53,10 @@ class _MealScreenState extends State<MealScreen>
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Weekly Diet Plan',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      'Weekly Diet Plan',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                   const AppIconButton(icon: Icons.more_vert_rounded),
                 ],
@@ -65,9 +78,13 @@ class _MealScreenState extends State<MealScreen>
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 2,
                 labelStyle: GoogleFonts.dmSans(
-                    fontSize: 13, fontWeight: FontWeight.w600),
-                unselectedLabelStyle:
-                    GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
                 tabs: _days.map((d) => Tab(text: d)).toList(),
               ),
             ),
@@ -78,7 +95,7 @@ class _MealScreenState extends State<MealScreen>
                 controller: _tabController,
                 children: List.generate(
                   7,
-                  (_) => _DayPlanView(),
+                  (index) => _DayPlanView(meals: mealPlan?['meals'] as List?),
                 ),
               ),
             ),
@@ -89,20 +106,32 @@ class _MealScreenState extends State<MealScreen>
   }
 }
 
+
+
 class _DayPlanView extends StatelessWidget {
+  final List? meals;
+
+  const _DayPlanView({this.meals});
+
   @override
   Widget build(BuildContext context) {
+    if (meals == null || meals!.isEmpty) {
+      return const Center(child: Text("No meal plan generated for this day."));
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
         children: [
-          ...AppData.dietPlanMeals.map((m) => _DietMealCard(meal: m)),
+          ...meals!.map((m) => _DietMealCard(meal: m)),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                // Handle regeneration logic here if needed
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryContainer,
                 foregroundColor: AppColors.primaryDark,
@@ -121,7 +150,7 @@ class _DayPlanView extends StatelessWidget {
 }
 
 class _DietMealCard extends StatelessWidget {
-  final DietMealModel meal;
+  final dynamic meal;
 
   const _DietMealCard({required this.meal});
 
@@ -137,19 +166,20 @@ class _DietMealCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(meal.emoji,
-                      style: const TextStyle(fontSize: 18)),
+                  const Text('🍴', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
-                  Text(meal.type,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    meal['mealType'] ?? 'Meal',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ],
               ),
-              NutriBadge.cal('${meal.calories} kcal'),
+              NutriBadge.cal('${meal['calories']} kcal'),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            meal.name,
+            meal['name'] ?? 'Unknown Meal',
             style: GoogleFonts.dmSans(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -160,24 +190,28 @@ class _DietMealCard extends StatelessWidget {
           Row(
             children: [
               NutriBox(
-                  value: '${meal.calories}',
-                  label: 'kcal',
-                  valueColor: AppColors.calText),
+                value: '${meal['calories']}',
+                label: 'kcal',
+                valueColor: AppColors.calText,
+              ),
               const SizedBox(width: 8),
               NutriBox(
-                  value: meal.protein,
-                  label: 'protein',
-                  valueColor: AppColors.proText),
+                value: '${meal['protein']}g',
+                label: 'protein',
+                valueColor: AppColors.proText,
+              ),
               const SizedBox(width: 8),
               NutriBox(
-                  value: meal.carbs,
-                  label: 'carbs',
-                  valueColor: AppColors.carbText),
+                value: '${meal['carbs']}g',
+                label: 'carbs',
+                valueColor: AppColors.carbText,
+              ),
               const SizedBox(width: 8),
               NutriBox(
-                  value: meal.fat,
-                  label: 'fat',
-                  valueColor: AppColors.fatText),
+                value: '${meal['fat']}g',
+                label: 'fat',
+                valueColor: AppColors.fatText,
+              ),
             ],
           ),
         ],

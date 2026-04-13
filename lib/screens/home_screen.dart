@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:planit_prep_pro/providers/AiResponse_provider.dart';
+import 'package:planit_prep_pro/providers/meal_plan_provider.dart';
 import 'package:planit_prep_pro/providers/user_provider.dart';
 import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
 import '../models/app_data.dart';
@@ -71,6 +72,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _mealPlanData = response;
       });
 
+      // Globally update the meal plan so MealScreen can react to it
+      ref.read(mealPlanStateProvider.notifier).state = response;
+
       await _loadUserSummary(); //loading user summary details
 
       if (response['meals'] != null) {
@@ -99,6 +103,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .getUserSummary();
 
     if (summary != null && mounted) {
+      // 1. Parse the total calories safely from the nested config
+      // final int parsedTotalCalories = safeInt(
+      //   summary["config"]?["answers"]?["target_calorie"] ?? 2000,
+      // );
+
       setState(() {
         _summaryData.clear();
         _summaryData.addAll({
@@ -114,26 +123,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         });
       });
 
-      ref
-          .read(userSummaryProvider.notifier)
-          .update(
-            (state) => {
-              ...state,
-              "date": summary["date"] ?? state["date"],
-              "greeting": summary["greeting"] ?? state["greeting"],
-              "caloriesDone": summary["caloriesDone"] ?? state["caloriesDone"],
-              "caloriesTotal":
-                  summary["caloriesTotal"] ?? state["caloriesTotal"],
-              "water": summary["water"] ?? state["water"],
-              "steps": summary["steps"] ?? state["steps"],
-              "protein": summary["protein"] ?? state["protein"],
-              "mealsDone": summary["mealsDone"] ?? state["mealsDone"],
-              "progress": summary["progress"] ?? state["progress"],
-              "name": summary["name"] ?? state["name"],
-            },
-          );
+      // FIX: Wrap the updated values inside the "data" key
+      ref.read(userSummaryProvider.notifier).update((state) {
+        return {
+          ...state,
+          "data": {
+            ...state["data"] ?? {}, // Keep existing data if any
+            "date": summary["date"] ?? state["data"]?["date"],
+            "greeting": summary["greeting"] ?? state["data"]?["greeting"],
+            "caloriesDone":
+                summary["caloriesDone"] ?? state["data"]?["caloriesDone"],
+            "caloriesTotal":
+                summary["caloriesTotal"] ?? state["data"]?["caloriesTotal"],
+            "water": summary["water"] ?? state["data"]?["water"],
+            "steps": summary["steps"] ?? state["data"]?["steps"],
+            "protein": summary["protein"] ?? state["data"]?["protein"],
+            "mealsDone": summary["mealsDone"] ?? state["data"]?["mealsDone"],
+            "progress":
+                (summary["progress"] ?? state["data"]?["progress"] ?? 0.0)
+                    .toDouble(),
+            "name": summary["name"] ?? state["data"]?["name"],
+            "age": summary["age"] ?? state["data"]?["age"],
+            "weight": summary["weight"] ?? state["data"]?["weight"],
+            "height": summary["height"] ?? state["data"]?["height"],
+            "dietType": summary["dietType"] ?? state["data"]?["dietType"],
+            "config": summary["config"] ?? state["data"]?["config"],
+          },
+        };
+      });
 
-      debugPrint("Updated Summary: $_summaryData");
+      debugPrint("Updated Global Provider with nested data key");
     }
   }
 

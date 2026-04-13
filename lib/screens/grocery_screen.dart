@@ -1,26 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/app_data.dart';
+import 'package:planit_prep_pro/providers/meal_plan_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 
-class GroceryScreen extends StatefulWidget {
+class GroceryScreen extends ConsumerStatefulWidget {
   const GroceryScreen({super.key});
 
   @override
-  State<GroceryScreen> createState() => _GroceryScreenState();
+  ConsumerState<GroceryScreen> createState() => _GroceryScreenState();
 }
 
-class _GroceryScreenState extends State<GroceryScreen> {
-  final List<GroceryItem> _items = List.from(AppData.groceryItems);
-
-  int get _checkedCount => _items.where((i) => i.isPurchased).length;
+class _GroceryScreenState extends ConsumerState<GroceryScreen> {
+  // Local state to keep track of checked items
+  final Map<String, bool> _purchasedStatus = {};
 
   @override
   Widget build(BuildContext context) {
-    final produce = _items.sublist(0, 4);
-    final protein = _items.sublist(4, 6);
-    final pantry = _items.sublist(6);
+    final mealPlan = ref.watch(mealPlanStateProvider);
+    final List<dynamic> rawItems = mealPlan?['groceryRequirements'] ?? [];
+
+    // Grouping logic: Organizing items by category (Vegetables, Protein, Pantry, etc.)
+    final Map<String, List<Map<String, dynamic>>> groupedItems = {};
+    for (var item in rawItems) {
+      final category = item['category'] ?? 'Other';
+      if (!groupedItems.containsKey(category)) {
+        groupedItems[category] = [];
+      }
+      groupedItems[category]!.add(item);
+    }
+
+    final int checkedCount = _purchasedStatus.values.where((v) => v).length;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -34,8 +45,10 @@ class _GroceryScreenState extends State<GroceryScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Grocery List',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      'Grocery List',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                   const AppIconButton(icon: Icons.share_rounded),
                 ],
@@ -58,16 +71,20 @@ class _GroceryScreenState extends State<GroceryScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded,
-                              size: 20, color: AppColors.textTertiary),
+                          const Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: AppColors.textTertiary,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
                               decoration: InputDecoration(
                                 hintText: 'Search items…',
                                 hintStyle: GoogleFonts.dmSans(
-                                    fontSize: 14,
-                                    color: AppColors.textTertiary),
+                                  fontSize: 14,
+                                  color: AppColors.textTertiary,
+                                ),
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
@@ -86,55 +103,62 @@ class _GroceryScreenState extends State<GroceryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${_items.length} items · $_checkedCount checked',
+                          '${rawItems.length} items · $checkedCount checked',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         GestureDetector(
-                          onTap: () => setState(() {
-                            for (final item in _items) {
-                              if (item.isPurchased) item.isPurchased = false;
-                            }
-                          }),
+                          onTap: () => setState(() => _purchasedStatus.clear()),
                           child: Text(
                             'Clear done',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryDark),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryDark,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    // Items card
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _CategoryLabel('Produce'),
-                          ...produce.map((i) => _GroceryRow(
-                              item: i,
-                              onToggle: () => setState(() {
-                                    i.isPurchased = !i.isPurchased;
-                                  }))),
-                          _CategoryLabel('Protein'),
-                          ...protein.map((i) => _GroceryRow(
-                              item: i,
-                              onToggle: () => setState(() {
-                                    i.isPurchased = !i.isPurchased;
-                                  }))),
-                          _CategoryLabel('Pantry'),
-                          ...pantry.asMap().entries.map((e) => _GroceryRow(
-                              item: e.value,
-                              isLast: e.key == pantry.length - 1,
-                              onToggle: () => setState(() {
-                                    e.value.isPurchased =
-                                        !e.value.isPurchased;
-                                  }))),
-                        ],
+                    // Items card rendering from Grouped logic
+                    if (rawItems.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 40),
+                          child: Text(
+                            "No groceries found. Generate a meal plan first!",
+                          ),
+                        ),
+                      )
+                    else
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: groupedItems.entries.map((entry) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _CategoryLabel(entry.key),
+                                ...entry.value.map((item) {
+                                  final itemName = item['item'] ?? 'Unknown';
+                                  final isPurchased =
+                                      _purchasedStatus[itemName] ?? false;
+
+                                  return _GroceryRow(
+                                    name: itemName,
+                                    quantity: item['quantity'] ?? '',
+                                    isPurchased: isPurchased,
+                                    onToggle: () => setState(() {
+                                      _purchasedStatus[itemName] = !isPurchased;
+                                    }),
+                                  );
+                                }),
+                              ],
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 16),
 
                     // Add Item button
@@ -183,25 +207,24 @@ class _CategoryLabel extends StatelessWidget {
 }
 
 class _GroceryRow extends StatelessWidget {
-  final GroceryItem item;
+  final String name;
+  final String quantity;
+  final bool isPurchased;
   final VoidCallback onToggle;
-  final bool isLast;
 
   const _GroceryRow({
-    required this.item,
+    required this.name,
+    required this.quantity,
+    required this.isPurchased,
     required this.onToggle,
-    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : const Border(
-                bottom: BorderSide(color: AppColors.outline, width: 1)),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.outline, width: 1)),
       ),
       child: Row(
         children: [
@@ -212,20 +235,21 @@ class _GroceryRow extends StatelessWidget {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: item.isPurchased
-                    ? AppColors.primary
-                    : Colors.transparent,
+                color: isPurchased ? AppColors.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: item.isPurchased
+                  color: isPurchased
                       ? AppColors.primary
                       : AppColors.outlineStrong,
                   width: 2,
                 ),
               ),
-              child: item.isPurchased
-                  ? const Icon(Icons.check_rounded,
-                      size: 14, color: Colors.white)
+              child: isPurchased
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: Colors.white,
+                    )
                   : null,
             ),
           ),
@@ -235,24 +259,19 @@ class _GroceryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  name,
                   style: GoogleFonts.dmSans(
                     fontSize: 15,
-                    color: item.isPurchased
+                    color: isPurchased
                         ? AppColors.textTertiary
                         : AppColors.textPrimary,
-                    decoration: item.isPurchased
-                        ? TextDecoration.lineThrough
-                        : null,
+                    decoration: isPurchased ? TextDecoration.lineThrough : null,
                   ),
                 ),
-                Text(item.quantity,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(quantity, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
-          Text(item.price,
-              style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
