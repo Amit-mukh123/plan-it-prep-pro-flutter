@@ -5,8 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:planit_prep_pro/providers/user_provider.dart';
 import '../theme/app_theme.dart';
 
-enum CookingDay { mon, tue, wed, thu, fri, sat, sun }
-
 class QuestionnaireScreen extends ConsumerStatefulWidget {
   const QuestionnaireScreen({super.key});
 
@@ -18,17 +16,19 @@ class QuestionnaireScreen extends ConsumerStatefulWidget {
 class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   int _currentIndex = 0;
   final Map<String, dynamic> _answers = {};
+  final TextEditingController _otherAllergyController = TextEditingController();
 
   final List<Map<String, dynamic>> _questions = [
     {
       "id": "allergies",
       "question": "Do you have any food allergies?",
-      "type": "mcq_single",
+      "type": "mcq_single_with_other",
       "options": [
         {"text": "None", "icon": Icons.check_circle_outline_rounded},
         {"text": "Dairy", "icon": Icons.water_drop_outlined},
         {"text": "Nuts", "icon": Icons.bakery_dining_outlined},
         {"text": "Gluten", "icon": Icons.grass_outlined},
+        {"text": "Others", "icon": Icons.add_circle_outline_rounded},
       ],
     },
     {
@@ -56,7 +56,7 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     {
       "id": "prep_style",
       "question": "What is your meal preparation style?",
-      "type": "mcq_single",
+      "type": "mcq_multi_csv",
       "options": [
         {"text": "Batch cooking", "icon": Icons.layers_rounded},
         {"text": "Fresh daily", "icon": Icons.restaurant_rounded},
@@ -65,7 +65,7 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     {
       "id": "appliances",
       "question": "Which kitchen appliances do you have?",
-      "type": "mcq_single",
+      "type": "mcq_multi_csv",
       "options": [
         {"text": "Stove & Oven", "icon": Icons.countertops_rounded},
         {"text": "Microwave", "icon": Icons.microwave_rounded},
@@ -76,7 +76,7 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     {
       "id": "cooking_time",
       "question": "Preferred cooking time?",
-      "type": "mcq_single",
+      "type": "mcq_multi_csv",
       "options": [
         {"text": "Morning", "icon": Icons.light_mode_rounded},
         {"text": "Evening", "icon": Icons.wb_twilight_rounded},
@@ -129,8 +129,19 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
 
   void _handleSelection(String questionId, String type, dynamic option) {
     setState(() {
-      if (type == "mcq_single") {
+      if (type == "mcq_single" || type == "mcq_single_with_other") {
         _answers[questionId] = option['text'];
+        if (option['text'] != "Others") _otherAllergyController.clear();
+      } else if (type == "mcq_multi_csv") {
+        String currentStr = _answers[questionId] ?? "";
+        List<String> items = currentStr.isEmpty ? [] : currentStr.split(', ');
+        String val = option['text'];
+        if (items.contains(val)) {
+          items.remove(val);
+        } else {
+          items.add(val);
+        }
+        _answers[questionId] = items.join(', ');
       } else if (type == "mcq_multi") {
         List<int> currentSelection = List<int>.from(_answers[questionId] ?? []);
         int val = option['value'];
@@ -146,11 +157,20 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   }
 
   Future<void> _saveUserDetails() async {
-    // Rewritten to match the requested JSON structure
+    if (_answers['allergies'] == "Others" &&
+        _otherAllergyController.text.isNotEmpty) {
+      _answers['allergies'] = _otherAllergyController.text;
+    }
+
+    // Ensure cooking_day is an empty array if Batch cooking was never selected
+    final String prepVal = _answers['prep_style'] ?? "";
+    if (!prepVal.contains("Batch cooking")) {
+      _answers['cooking_day'] = [];
+    }
+
     final finalJson = {
       "data": {"answers": _answers},
     };
-
     final bool isSuccess = await ref
         .read(userControllerProvider.notifier)
         .storeUserConfigDetails(finalJson);
@@ -160,13 +180,24 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     } else {
       Get.snackbar(
         "Error",
-        "Failed to save details. Please try again.",
+        "Failed to save details.",
         snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
 
   void _nextQuestion() {
+    String currentId = _questions[_currentIndex]['id'];
+
+    // Check if we need to skip cooking_day based on prep_style selection
+    if (currentId == 'target_calorie') {
+      String prepVal = _answers['prep_style'] ?? "";
+      if (!prepVal.contains("Batch cooking")) {
+        _saveUserDetails();
+        return;
+      }
+    }
+
     if (_currentIndex < _questions.length - 1) {
       setState(() => _currentIndex++);
     } else {
@@ -177,6 +208,15 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   void _previousQuestion() {
     if (_currentIndex > 0) {
       setState(() => _currentIndex--);
+      String currentId = _questions[_currentIndex]['id'];
+
+      // If we are moving back from a question and skip the conditional logic
+      if (currentId == 'cooking_day') {
+        String prepVal = _answers['prep_style'] ?? "";
+        if (!prepVal.contains("Batch cooking")) {
+          setState(() => _currentIndex--);
+        }
+      }
     }
   }
 
@@ -215,7 +255,6 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                       style: GoogleFonts.dmSans(
                         fontSize: 12,
                         color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -225,9 +264,6 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
                 child: SingleChildScrollView(
                   key: ValueKey<int>(_currentIndex),
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -243,16 +279,6 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        currentQuestion['type'] == "mcq_multi"
-                            ? "Select all that apply."
-                            : "Please select one option to continue.",
-                        style: GoogleFonts.dmSans(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
                       const SizedBox(height: 32),
                       ...List.generate(currentQuestion['options'].length, (
                         index,
@@ -260,8 +286,16 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                         final option = currentQuestion['options'][index];
                         bool isSelected = false;
 
-                        if (currentQuestion['type'] == "mcq_single") {
+                        if (currentQuestion['type'].toString().contains(
+                          "mcq_single",
+                        )) {
                           isSelected = selectedValue == option['text'];
+                        } else if (currentQuestion['type'] == "mcq_multi_csv") {
+                          isSelected =
+                              (selectedValue as String?)
+                                  ?.split(', ')
+                                  .contains(option['text']) ??
+                              false;
                         } else {
                           isSelected =
                               (selectedValue as List<int>?)?.contains(
@@ -270,17 +304,39 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                               false;
                         }
 
-                        return _OptionCard(
-                          text: option['text'],
-                          icon: option['icon'],
-                          isSelected: isSelected,
-                          onTap: isLoading
-                              ? () {}
-                              : () => _handleSelection(
-                                  currentQuestion['id'],
-                                  currentQuestion['type'],
-                                  option,
+                        return Column(
+                          children: [
+                            _OptionCard(
+                              text: option['text'],
+                              icon: option['icon'],
+                              isSelected: isSelected,
+                              onTap: isLoading
+                                  ? () {}
+                                  : () => _handleSelection(
+                                      currentQuestion['id'],
+                                      currentQuestion['type'],
+                                      option,
+                                    ),
+                            ),
+                            if (option['text'] == "Others" && isSelected)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: TextField(
+                                  controller: _otherAllergyController,
+                                  decoration: InputDecoration(
+                                    hintText: "Enter allergy name",
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
                                 ),
+                              ),
+                          ],
                         );
                       }),
                     ],
@@ -296,10 +352,16 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
               onNext:
                   (isLoading ||
                       selectedValue == null ||
+                      (selectedValue is String && selectedValue.isEmpty) ||
                       (selectedValue is List && selectedValue.isEmpty))
                   ? null
                   : _nextQuestion,
-              isLast: _currentIndex == _questions.length - 1,
+              isLast:
+                  _currentIndex == _questions.length - 1 ||
+                  (_questions[_currentIndex]['id'] == 'target_calorie' &&
+                      !(_answers['prep_style'] ?? "").contains(
+                        "Batch cooking",
+                      )),
             ),
           ],
         ),
@@ -392,7 +454,7 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.outline, width: 1)),
       ),

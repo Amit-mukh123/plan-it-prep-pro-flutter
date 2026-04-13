@@ -34,25 +34,25 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Progress
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: const LinearProgressIndicator(
-                  value: 0.6,
-                  minHeight: 4,
-                  backgroundColor: AppColors.outline,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 20),
-                  child: Text(
-                    'Step 3 of 5',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ),
+              // ClipRRect(
+              //   borderRadius: BorderRadius.circular(2),
+              //   child: const LinearProgressIndicator(
+              //     value: 0.6,
+              //     minHeight: 4,
+              //     backgroundColor: AppColors.outline,
+              //     valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              //   ),
+              // ),
+              // Align(
+              //   alignment: Alignment.centerRight,
+              //   child: Padding(
+              //     padding: const EdgeInsets.only(top: 4, bottom: 20),
+              //     child: Text(
+              //       'Step 3 of 5',
+              //       style: Theme.of(context).textTheme.bodySmall,
+              //     ),
+              //   ),
+              // ),
 
               Text(
                 "What's your goal?",

@@ -41,9 +41,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false);
         return true;
       } else {
-        _showError(
-          response["msg"] ?? "Failed to send OTP. Please try again.",
-        );
+        _showError(response["msg"] ?? "Failed to send OTP. Please try again.");
         state = state.copyWith(isLoading: false);
         return false;
       }
@@ -93,19 +91,19 @@ class AuthController extends StateNotifier<AuthState> {
   Future<bool> register(Map<String, dynamic> body) async {
     state = state.copyWith(isLoading: true);
     try {
-      final response = await api.sendRequest(
+      var response = await api.sendRequest(
         path: "/register",
         method: "POST",
         data: body,
       );
-
+      response = response["data"];
       print("API Response: $response");
 
       if (response["status"] == true) {
         state = state.copyWith(isLoading: false);
         return true;
       } else {
-        _showError(response["msg"] ?? "Registration failed.");
+        _showError(response["msg"]["email"][0] ?? "Registration failed.");
         state = state.copyWith(isLoading: false);
         return false;
       }
