@@ -22,7 +22,7 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     {
       "id": "allergies",
       "question": "Do you have any food allergies?",
-      "type": "mcq_single_with_other",
+      "type": "mcq_multi_csv_with_other",
       "options": [
         {"text": "None", "icon": Icons.check_circle_outline_rounded},
         {"text": "Dairy", "icon": Icons.water_drop_outlined},
@@ -129,17 +129,25 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
 
   void _handleSelection(String questionId, String type, dynamic option) {
     setState(() {
-      if (type == "mcq_single" || type == "mcq_single_with_other") {
+      if (type == "mcq_single") {
         _answers[questionId] = option['text'];
-        if (option['text'] != "Others") _otherAllergyController.clear();
-      } else if (type == "mcq_multi_csv") {
+      } else if (type == "mcq_multi_csv" ||
+          type == "mcq_multi_csv_with_other") {
         String currentStr = _answers[questionId] ?? "";
         List<String> items = currentStr.isEmpty ? [] : currentStr.split(', ');
         String val = option['text'];
-        if (items.contains(val)) {
-          items.remove(val);
+
+        if (val == "None" && type == "mcq_multi_csv_with_other") {
+          items = ["None"];
+          _otherAllergyController.clear();
         } else {
-          items.add(val);
+          if (items.contains("None")) items.remove("None");
+          if (items.contains(val)) {
+            items.remove(val);
+            if (val == "Others") _otherAllergyController.clear();
+          } else {
+            items.add(val);
+          }
         }
         _answers[questionId] = items.join(', ');
       } else if (type == "mcq_multi") {
@@ -157,12 +165,15 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   }
 
   Future<void> _saveUserDetails() async {
-    if (_answers['allergies'] == "Others" &&
+    String allergyStr = _answers['allergies'] ?? "";
+    if (allergyStr.contains("Others") &&
         _otherAllergyController.text.isNotEmpty) {
-      _answers['allergies'] = _otherAllergyController.text;
+      List<String> items = allergyStr.split(', ');
+      items.remove("Others");
+      items.add(_otherAllergyController.text);
+      _answers['allergies'] = items.join(', ');
     }
 
-    // Ensure cooking_day is an empty array if Batch cooking was never selected
     final String prepVal = _answers['prep_style'] ?? "";
     if (!prepVal.contains("Batch cooking")) {
       _answers['cooking_day'] = [];
@@ -189,7 +200,6 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   void _nextQuestion() {
     String currentId = _questions[_currentIndex]['id'];
 
-    // Check if we need to skip cooking_day based on prep_style selection
     if (currentId == 'target_calorie') {
       String prepVal = _answers['prep_style'] ?? "";
       if (!prepVal.contains("Batch cooking")) {
@@ -210,7 +220,6 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
       setState(() => _currentIndex--);
       String currentId = _questions[_currentIndex]['id'];
 
-      // If we are moving back from a question and skip the conditional logic
       if (currentId == 'cooking_day') {
         String prepVal = _answers['prep_style'] ?? "";
         if (!prepVal.contains("Batch cooking")) {
@@ -286,11 +295,11 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                         final option = currentQuestion['options'][index];
                         bool isSelected = false;
 
-                        if (currentQuestion['type'].toString().contains(
-                          "mcq_single",
-                        )) {
+                        if (currentQuestion['type'] == "mcq_single") {
                           isSelected = selectedValue == option['text'];
-                        } else if (currentQuestion['type'] == "mcq_multi_csv") {
+                        } else if (currentQuestion['type'].toString().contains(
+                          "mcq_multi_csv",
+                        )) {
                           isSelected =
                               (selectedValue as String?)
                                   ?.split(', ')

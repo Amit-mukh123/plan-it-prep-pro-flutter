@@ -24,60 +24,62 @@ class AppBottomNavBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.outline, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppColors.outline, width: 1)),
       ),
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
-      child: Row(
-        children: List.generate(items.length, (i) {
-          final isActive = i == currentIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTap(i),
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isActive)
-                    Container(
-                      width: 56,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        borderRadius: BorderRadius.circular(100),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          child: Row(
+            children: List.generate(items.length, (i) {
+              final isActive = i == currentIndex;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onTap(i),
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isActive)
+                        Container(
+                          width: 56,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Icon(
+                            items[i].icon,
+                            size: 22,
+                            color: AppColors.primaryDark,
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2, top: 5),
+                          child: Icon(
+                            items[i].icon,
+                            size: 22,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        items[i].label,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: isActive
+                              ? AppColors.primaryDark
+                              : AppColors.textSecondary,
+                        ),
                       ),
-                      child: Icon(
-                        items[i].icon,
-                        size: 22,
-                        color: AppColors.primaryDark,
-                      ),
-                    )
-                  else
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Icon(
-                        items[i].icon,
-                        size: 22,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  const SizedBox(height: 2),
-                  Text(
-                    items[i].label,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: isActive
-                          ? AppColors.primaryDark
-                          : AppColors.textSecondary,
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        }),
+                ),
+              );
+            }),
+          ),
+        ),
       ),
     );
   }
