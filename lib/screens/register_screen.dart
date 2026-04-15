@@ -20,6 +20,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  double _passwordStrength = 0;
+  String _strengthText = "";
+  Color _strengthColor = Colors.transparent;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -28,33 +32,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  /// Handles the API call and navigation logic
+  void _checkPasswordStrength(String value) {
+    double strength = 0;
+    if (value.length >= 6) strength += 0.25;
+    if (value.contains(RegExp(r'[a-z]')) || value.contains(RegExp(r'[A-Z]')))
+      strength += 0.25;
+    if (value.contains(RegExp(r'[0-9]'))) strength += 0.25;
+    if (value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.25;
+
+    setState(() {
+      _passwordStrength = strength;
+      if (strength <= 0.25) {
+        _strengthText = "Weak";
+        _strengthColor = Colors.red;
+      } else if (strength <= 0.75) {
+        _strengthText = "Medium";
+        _strengthColor = Colors.orange;
+      } else {
+        _strengthText = "Strong";
+        _strengthColor = Colors.green;
+      }
+    });
+  }
+
   Future<void> _handleRegister() async {
-    // 1. Validate Form Fields
     if (!_formKey.currentState!.validate()) return;
 
-    // 2. Prepare Data
     final Map<String, dynamic> registrationData = {
       "email": _emailController.text.trim(),
       "mobile": _phoneController.text.trim(),
       "password": _passwordController.text,
     };
 
-    // 3. Execute Register via Riverpod Notifier
-    // Access 'ref' directly as a property of ConsumerState
     final bool isSuccess = await ref
         .read(authProvider.notifier)
         .register(registrationData);
 
     if (isSuccess) {
       _showSnackBar("Success", "Account created successfully!", isError: false);
-
-      // Use Get.offNamed to prevent the user from going back to the registration form
       Get.offNamed(
         '/login',
         arguments: {
           'phone_number': _phoneController.text.trim(),
-          'isRegister': true, // or false, depending on your logic
+          'isRegister': true,
         },
       );
     } else {
@@ -85,7 +105,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch the provider for changes in AuthState (e.g., isLoading)
     final authState = ref.watch(authProvider);
     final bool isLoading = authState.isLoading;
 
@@ -103,7 +122,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildHeader(),
                 const SizedBox(height: 32),
 
-                // Email Section
                 _buildLabel("Email Address"),
                 const SizedBox(height: 8),
                 _CustomTextField(
@@ -114,31 +132,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty)
                       return 'Email is required';
-                    if (!GetUtils.isEmail(value))
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value)) {
                       return 'Enter a valid email address';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Phone Section
                 _buildLabel("Phone Number"),
                 const SizedBox(height: 8),
                 _CustomTextField(
                   controller: _phoneController,
-                  hintText: "98765 43210",
+                  hintText: "Enter 10 digit number",
                   keyboardType: TextInputType.phone,
+                  maxLength: 10,
                   enabled: !isLoading,
                   validator: (value) {
                     if (value == null || value.isEmpty)
                       return 'Phone number is required';
-                    if (value.length < 10) return 'Enter a valid phone number';
+                    if (value.length != 10) return 'Must be exactly 10 digits';
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Password Section
                 _buildLabel("Password"),
                 const SizedBox(height: 8),
                 _CustomTextField(
@@ -146,17 +166,48 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   hintText: "••••••••",
                   isPassword: true,
                   enabled: !isLoading,
+                  onChanged: _checkPasswordStrength,
                   validator: (value) {
                     if (value == null || value.isEmpty)
                       return 'Password is required';
                     if (value.length < 6)
                       return 'Password must be at least 6 characters';
+                    if (!RegExp(r'[0-9]').hasMatch(value))
+                      return 'Need at least one digit';
+                    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value))
+                      return 'Need one special character';
                     return null;
                   },
                 ),
+                if (_passwordController.text.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: _passwordStrength,
+                            backgroundColor: AppColors.outline,
+                            color: _strengthColor,
+                            minHeight: 6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _strengthText,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _strengthColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 40),
 
-                // Submit Button
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -284,7 +335,9 @@ class _CustomTextField extends StatelessWidget {
   final String hintText;
   final bool isPassword;
   final bool enabled;
+  final int? maxLength;
   final TextInputType keyboardType;
+  final void Function(String)? onChanged;
   final String? Function(String?)? validator;
 
   const _CustomTextField({
@@ -292,7 +345,9 @@ class _CustomTextField extends StatelessWidget {
     required this.hintText,
     this.isPassword = false,
     this.enabled = true,
+    this.maxLength,
     this.keyboardType = TextInputType.text,
+    this.onChanged,
     this.validator,
   });
 
@@ -304,9 +359,12 @@ class _CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       enabled: enabled,
+      maxLength: maxLength,
+      onChanged: onChanged,
       style: GoogleFonts.dmSans(fontSize: 15, color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: hintText,
+        counterText: "",
         hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.4)),
         filled: true,
         fillColor: enabled

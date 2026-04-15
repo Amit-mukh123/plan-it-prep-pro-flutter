@@ -106,17 +106,17 @@ class _GroceryScreenState extends ConsumerState<GroceryScreen> {
                           '${rawItems.length} items · $checkedCount checked',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
-                        GestureDetector(
-                          onTap: () => setState(() => _purchasedStatus.clear()),
-                          child: Text(
-                            'Clear done',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primaryDark,
-                            ),
-                          ),
-                        ),
+                        // GestureDetector(
+                        //   onTap: () => setState(() => _purchasedStatus.clear()),
+                        //   child: Text(
+                        //     'Clear done',
+                        //     style: GoogleFonts.dmSans(
+                        //       fontSize: 13,
+                        //       fontWeight: FontWeight.w600,
+                        //       color: AppColors.primaryDark,
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                     const SizedBox(height: 12),

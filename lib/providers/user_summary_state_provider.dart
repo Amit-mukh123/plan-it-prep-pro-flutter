@@ -8,7 +8,7 @@ final userSummaryProvider = StateProvider<Map<String, dynamic>>((ref) {
       "date": "Monday, 13 Apr",
       "greeting": "Hello!",
       "caloriesDone": 0,
-      "caloriesTotal": 2000,
+      "caloriesTotal": 000,
       "water": "0.0 L",
       "steps": "0",
       "protein": "0g",
@@ -32,7 +32,8 @@ final userSummaryProvider = StateProvider<Map<String, dynamic>>((ref) {
           "cooking_time": "Morning",
           "reminders": "Daily",
           "target_calorie": "1500 kcal",
-          "cooking_day": []
+          "cooking_day": [],
+          "health_goal":""
         }
       }
     }

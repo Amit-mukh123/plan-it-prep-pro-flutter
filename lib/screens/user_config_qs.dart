@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:planit_prep_pro/providers/user_provider.dart';
 import '../theme/app_theme.dart';
+import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
 
 class QuestionnaireScreen extends ConsumerStatefulWidget {
   const QuestionnaireScreen({super.key});
@@ -127,6 +128,44 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final Map<String, dynamic> args = Get.arguments ?? {};
+      final bool isEdited = args['isEdited'] ?? false;
+
+      if (isEdited) {
+        final summary = ref.read(userSummaryProvider);
+        final existingAnswers =
+            summary['data']?['config']?['answers'] as Map<String, dynamic>?;
+
+        if (existingAnswers != null) {
+          setState(() {
+            _answers.addAll(existingAnswers);
+
+            // Check if allergies contain something not in the standard list to fill "Others"
+            String allergyStr = _answers['allergies'] ?? "";
+            List<String> items = allergyStr.split(', ');
+            List<String> standardOptions = ["None", "Dairy", "Nuts", "Gluten"];
+
+            List<String> others = items
+                .where((i) => !standardOptions.contains(i))
+                .toList();
+            if (others.isNotEmpty) {
+              _otherAllergyController.text = others.join(', ');
+              // Ensure "Others" tag is in the answer for UI logic
+              if (!items.contains("Others")) {
+                items.add("Others");
+                _answers['allergies'] = items.join(', ');
+              }
+            }
+          });
+        }
+      }
+    });
+  }
+
   void _handleSelection(String questionId, String type, dynamic option) {
     setState(() {
       if (type == "mcq_single") {
@@ -165,6 +204,9 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   }
 
   Future<void> _saveUserDetails() async {
+    final Map<String, dynamic> args = Get.arguments ?? {};
+    final String userGoal = args['goal'] ?? "Maintain Weight";
+
     String allergyStr = _answers['allergies'] ?? "";
     if (allergyStr.contains("Others") &&
         _otherAllergyController.text.isNotEmpty) {
@@ -180,7 +222,9 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     }
 
     final finalJson = {
-      "data": {"answers": _answers},
+      "data": {
+        "answers": {..._answers, "health_goal": userGoal},
+      },
     };
     final bool isSuccess = await ref
         .read(userControllerProvider.notifier)
@@ -305,9 +349,9 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                                   ?.split(', ')
                                   .contains(option['text']) ??
                               false;
-                        } else {
+                        } else if (currentQuestion['type'] == "mcq_multi") {
                           isSelected =
-                              (selectedValue as List<int>?)?.contains(
+                              (selectedValue as List?)?.contains(
                                 option['value'],
                               ) ??
                               false;

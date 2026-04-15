@@ -37,29 +37,28 @@ class MealDetailScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Column(
-        children: [
-          // Hero Image Section
-          Stack(
-            children: [
-              Container(
-                height: 220,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: bgColor.withOpacity(
-                    0.2,
-                  ), // Use opacity for better contrast
-                ),
-                child: Center(
-                  child: Text(
-                    meal['emoji'] ?? '🍲',
-                    style: const TextStyle(fontSize: 80),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Hero Image Section
+            Stack(
+              children: [
+                Container(
+                  height: 220,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: bgColor.withOpacity(
+                      0.2,
+                    ), // Use opacity for better contrast
+                  ),
+                  child: Center(
+                    child: Text(
+                      meal['emoji'] ?? '🍲',
+                      style: const TextStyle(fontSize: 80),
+                    ),
                   ),
                 ),
-              ),
-              SafeArea(
-                bottom: false,
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -75,138 +74,138 @@ class MealDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // Content Section
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title and Header info
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              meal['name'] ?? 'Unknown Meal',
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${tags.isNotEmpty ? tags.join(' · ') : 'Healthy'} · ${meal['prepTime'] ?? 0} mins',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ],
+            // Content Section
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title and Header info
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                meal['name'] ?? 'Unknown Meal',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${tags.isNotEmpty ? tags.join(' · ') : 'Healthy'} · ${meal['prepTime'] ?? 0} mins',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                        NutriBadge.cal('${meal['calories'] ?? 0} kcal'),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+                    // Nutrition Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _NutriStat(
+                          value: '${meal['protein'] ?? 0}g',
+                          label: 'Protein',
+                          color: AppColors.proText,
+                        ),
+                        _NutriStat(
+                          value: '${meal['carbs'] ?? 0}g',
+                          label: 'Carbs',
+                          color: AppColors.carbText,
+                        ),
+                        _NutriStat(
+                          value: '${meal['fat'] ?? 0}g',
+                          label: 'Fat',
+                          color: AppColors.fatText,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+
+                    // Ingredients Section
+                    Text(
+                      'Ingredients',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ingredients
+                          .map((ing) => _IngredientChip(label: ing))
+                          .toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+
+                    // Instructions (Steps) Section
+                    Text(
+                      'Instructions',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (steps.isEmpty)
+                      const Text("No instructions provided.")
+                    else
+                      ...steps.asMap().entries.map(
+                        (e) => _StepItem(
+                          number: e.key + 1,
+                          text: e.value,
+                          isLast: e.key == steps.length - 1,
                         ),
                       ),
-                      NutriBadge.cal('${meal['calories'] ?? 0} kcal'),
-                    ],
-                  ),
 
-                  const SizedBox(height: 20),
-                  // Nutrition Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _NutriStat(
-                        value: '${meal['protein'] ?? 0}g',
-                        label: 'Protein',
-                        color: AppColors.proText,
-                      ),
-                      _NutriStat(
-                        value: '${meal['carbs'] ?? 0}g',
-                        label: 'Carbs',
-                        color: AppColors.carbText,
-                      ),
-                      _NutriStat(
-                        value: '${meal['fat'] ?? 0}g',
-                        label: 'Fat',
-                        color: AppColors.fatText,
-                      ),
-                    ],
-                  ),
+                    const SizedBox(height: 32),
 
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  // Ingredients Section
-                  Text(
-                    'Ingredients',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ingredients
-                        .map((ing) => _IngredientChip(label: ing))
-                        .toList(),
-                  ),
-
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  // Instructions (Steps) Section
-                  Text(
-                    'Instructions',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (steps.isEmpty)
-                    const Text("No instructions provided.")
-                  else
-                    ...steps.asMap().entries.map(
-                      (e) => _StepItem(
-                        number: e.key + 1,
-                        text: e.value,
-                        isLast: e.key == steps.length - 1,
-                      ),
-                    ),
-
-                  const SizedBox(height: 32),
-
-                  // Bottom Action Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    // Bottom Action Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () {},
+                        icon: const Icon(Icons.add_task_rounded),
+                        label: const Text(
+                          'Add to Log',
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
-                      onPressed: () {},
-                      icon: const Icon(Icons.add_task_rounded),
-                      label: const Text(
-                        'Add to Log',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

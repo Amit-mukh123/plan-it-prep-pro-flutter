@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
+import 'package:planit_prep_pro/screens/home_screen.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 
@@ -27,6 +29,44 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _diets = ['Vegetarian', 'Non-Veg', 'Vegan'];
   final _dietIcons = [Icons.spa_rounded, Icons.egg_rounded, Icons.eco_rounded];
   final _genders = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bool isEdited = Get.arguments?['isEdited'] ?? false;
+      if (isEdited) {
+        print("call kiya re munna");
+        final userData = ref.read(userSummaryProvider)['data'];
+        if (userData != null) {
+          _fullNameController.text = (userData['name'] ?? "").toString();
+          _ageController.text = safeInt(userData['age'] ?? "").toString();
+          _heightController.text = safeInt(
+            userData['height'] ?? "",
+          ).toString();
+          _weightController.text = safeInt(
+            userData['weight'] ?? "",
+          ).toString();
+          _targetWeightController.text = safeInt(
+            userData['target_weight'] ?? "",
+          ).toString();
+
+          final String gender = userData['gender'] ?? "";
+          if (_genders.contains(gender)) {
+            setState(() => _selectedGender = gender);
+          }
+
+          final String diet = userData['dietType'] ?? "";
+          final index = _diets.indexWhere(
+            (d) => d.toLowerCase() == diet.toLowerCase(),
+          );
+          if (index != -1) {
+            setState(() => _dietIndex = index);
+          }
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -57,14 +97,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     // Body formatted with "data" -> "answers" nesting
     final Map<String, dynamic> body = {
       "data": {
-          "full_name": _fullNameController.text.trim(),
-          "gender": _selectedGender,
-          "age": _ageController.text.trim(),
-          "height": _heightController.text.trim(),
-          "weight": _weightController.text.trim(),
-          "target_weight": _targetWeightController.text.trim(),
-          "diet": _diets[_dietIndex],
-        },
+        "full_name": _fullNameController.text.trim(),
+        "gender": _selectedGender,
+        "age": _ageController.text.trim(),
+        "height": _heightController.text.trim(),
+        "weight": _weightController.text.trim(),
+        "target_weight": _targetWeightController.text.trim(),
+        "diet": _diets[_dietIndex],
+      },
     };
 
     // Call the store function from UserController via Riverpod
@@ -73,8 +113,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         .storeUserProfileDetails(body);
 
     if (isSuccess) {
-      // Success: Clear routes and go to goals screen
-      Get.offNamed('/user-goal');
+      final bool isEdited = Get.arguments?['isEdited'] ?? false;
+      if (isEdited) {
+        Get.offAllNamed('/main-shell');
+      } else {
+        Get.offNamed('/user-goal');
+      }
     }
   }
 

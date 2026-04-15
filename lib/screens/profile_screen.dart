@@ -19,11 +19,12 @@ class ProfileScreen extends ConsumerWidget {
 
     // Access the 'data' map from your JSON structure
     final userData = rawState['data'] ?? {};
+    final configAnswers = userData['config']?['answers'] ?? {};
+    final String currentGoal = configAnswers['health_goal'] ?? 'Not Set';
 
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
             // Top bar
@@ -34,7 +35,10 @@ class ProfileScreen extends ConsumerWidget {
                   Expanded(child: Text('Profile', style: textTheme.titleLarge)),
                   AppIconButton(
                     icon: Icons.edit_rounded,
-                    onTap: () => Get.toNamed('/profile-setup'),
+                    onTap: () => Get.toNamed(
+                      '/profile-setup',
+                      arguments: {'isEdited': true},
+                    ),
                   ),
                 ],
               ),
@@ -52,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.primaryContainer,
                             shape: BoxShape.circle,
                           ),
@@ -61,20 +65,33 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              userData['name'] ?? 'User',
-                              style: textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 6),
-                            AppChip(
-                              label: userData['dietType'] ?? 'Not Set',
-                              isActive: true,
-                              icon: Icons.spa_rounded,
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                userData['name'] ?? 'User',
+                                style: textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  AppChip(
+                                    label: userData['dietType'] ?? 'Not Set',
+                                    isActive: true,
+                                    icon: Icons.spa_rounded,
+                                  ),
+                                  AppChip(
+                                    label: currentGoal,
+                                    isActive: true,
+                                    icon: Icons.track_changes_rounded,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -127,33 +144,30 @@ class ProfileScreen extends ConsumerWidget {
                     AppCard(
                       child: Column(
                         children: [
+                          // Diet Preferences with isEdited: true
                           _ClickableSettingsRow(
                             iconBg: AppColors.primaryContainer,
                             iconColor: AppColors.primaryDark,
                             icon: Icons.restaurant_rounded,
                             label: 'Diet Preferences',
-                            route: '/qs_and_ans',
+                            onTap: () => Get.toNamed(
+                              '/user-goal',
+                              arguments: {'isEdited': true},
+                            ),
                           ),
-                          // _ClickableSettingsRow(
-                          //   iconBg: const Color(0xFFE0F2FE),
-                          //   iconColor: const Color(0xFF0369A1),
-                          //   icon: Icons.notifications_rounded,
-                          //   label: 'Notifications',
-                          //   route: '/notifications',
-                          // ),
                           _ClickableSettingsRow(
                             iconBg: const Color(0xFFEDE9FE),
                             iconColor: const Color(0xFF6D28D9),
                             icon: Icons.lock_rounded,
                             label: 'Privacy',
-                            route: '/privacy',
+                            onTap: () => Get.toNamed('/privacy'),
                           ),
                           _ClickableSettingsRow(
                             iconBg: const Color(0xFFFEF3C7),
                             iconColor: const Color(0xFF92400E),
                             icon: Icons.help_outline_rounded,
                             label: 'Help & Support',
-                            route: '/help-support',
+                            onTap: () => Get.toNamed('/help-support'),
                           ),
                           // Logout Button
                           GestureDetector(
@@ -213,20 +227,20 @@ class _ClickableSettingsRow extends StatelessWidget {
   final Color iconColor;
   final IconData icon;
   final String label;
-  final String route;
+  final VoidCallback onTap;
 
   const _ClickableSettingsRow({
     required this.iconBg,
     required this.iconColor,
     required this.icon,
     required this.label,
-    required this.route,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Get.toNamed(route),
+      onTap: onTap,
       child: Container(
         color: Colors.transparent,
         child: SettingsRow(

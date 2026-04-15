@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
 import '../theme/app_theme.dart';
-import 'main_shell.dart';
 
-class HealthGoalsScreen extends StatefulWidget {
+class HealthGoalsScreen extends ConsumerStatefulWidget {
   const HealthGoalsScreen({super.key});
 
   @override
-  State<HealthGoalsScreen> createState() => _HealthGoalsScreenState();
+  ConsumerState<HealthGoalsScreen> createState() => _HealthGoalsScreenState();
 }
 
-class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
+class _HealthGoalsScreenState extends ConsumerState<HealthGoalsScreen> {
   int _selectedGoal = 0;
   double _calories = 1800;
 
@@ -24,6 +24,28 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bool isEdited = Get.arguments?['isEdited'] ?? false;
+      if (isEdited) {
+        final userData = ref.read(userSummaryProvider)['data'];
+        final String savedGoal =
+            userData['config']?['answers']?['health_goal'] ?? "";
+        final int savedCals = userData['caloriesTotal'] ?? 1800;
+
+        setState(() {
+          _calories = savedCals.toDouble();
+          if (savedGoal.isNotEmpty) {
+            _selectedGoal = _goals.indexWhere((g) => g.label == savedGoal);
+            if (_selectedGoal == -1) _selectedGoal = 0;
+          }
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -33,27 +55,6 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Progress
-              // ClipRRect(
-              //   borderRadius: BorderRadius.circular(2),
-              //   child: const LinearProgressIndicator(
-              //     value: 0.6,
-              //     minHeight: 4,
-              //     backgroundColor: AppColors.outline,
-              //     valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              //   ),
-              // ),
-              // Align(
-              //   alignment: Alignment.centerRight,
-              //   child: Padding(
-              //     padding: const EdgeInsets.only(top: 4, bottom: 20),
-              //     child: Text(
-              //       'Step 3 of 5',
-              //       style: Theme.of(context).textTheme.bodySmall,
-              //     ),
-              //   ),
-              // ),
-
               Text(
                 "What's your goal?",
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -190,7 +191,17 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  onPressed: () => Get.offAllNamed('/qs_and_ans'),
+                  onPressed: () {
+                    // Access arguments to determine if we should pass isEdited true
+                    final bool isEdited = Get.arguments?['isEdited'] ?? false;
+                    Get.toNamed(
+                      '/qs_and_ans',
+                      arguments: {
+                        'goal': _goals[_selectedGoal].label,
+                        'isEdited': isEdited,
+                      },
+                    );
+                  },
                   icon: const Icon(Icons.check_rounded),
                   label: const Text('Save Goals'),
                 ),

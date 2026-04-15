@@ -15,8 +15,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  // Arguments are expected as a Map or similar; defaulting isRegister to false
-  final String phoneNumber = Get.arguments?['phone_number'] ?? "your number";
+
   final bool isRegister = Get.arguments?['isRegister'] ?? false;
 
   @override
@@ -35,7 +34,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final bool isSuccess = await ref.read(authProvider.notifier).login(body);
 
     if (isSuccess) {
-      // Passing the phone number and isRegister as false for login flow
       Get.offNamed(
         '/verify-otp',
         arguments: {
@@ -85,12 +83,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         controller: _phoneController,
                         enabled: !isLoading,
                         keyboardType: TextInputType.phone,
+                        maxLength: 10,
                         style: GoogleFonts.dmSans(
                           fontSize: 15,
                           color: AppColors.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Enter Phone Number',
+                          hintText: 'Enter 10 Digit Number',
+                          counterText: "",
                           filled: true,
                           fillColor: AppColors.surface,
                           contentPadding: const EdgeInsets.symmetric(
@@ -112,9 +112,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                         ),
-                        validator: (val) => (val == null || val.isEmpty)
-                            ? "Enter phone number"
-                            : null,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return "Enter phone number";
+                          }
+                          if (val.length != 10) {
+                            return "Must be exactly 10 digits";
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 32),
                       SizedBox(

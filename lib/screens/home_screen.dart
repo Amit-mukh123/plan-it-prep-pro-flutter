@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     "date": "",
     "greeting": "Hello!",
     "caloriesDone": 0,
-    "caloriesTotal": 2000,
+    "caloriesTotal": 000,
     "water": "0",
     "steps": "0",
     "protein": "0",
@@ -146,6 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             "age": summary["age"] ?? state["data"]?["age"],
             "weight": summary["weight"] ?? state["data"]?["weight"],
             "height": summary["height"] ?? state["data"]?["height"],
+            "target_weight":
+                summary["target_weight"] ?? state["data"]?["target_weight"],
             "dietType": summary["dietType"] ?? state["data"]?["dietType"],
             "config": summary["config"] ?? state["data"]?["config"],
           },
