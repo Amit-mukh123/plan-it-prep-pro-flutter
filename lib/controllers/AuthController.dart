@@ -103,7 +103,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false);
         return true;
       } else {
-        _showError(response["msg"]["email"][0] ?? "Registration failed.");
+        _showError(response["message"] ?? "Registration failed.");
         state = state.copyWith(isLoading: false);
         return false;
       }

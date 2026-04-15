@@ -383,7 +383,7 @@ class _CustomTextField extends StatelessWidget {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
+          borderSide: const BorderSide( 
             color: AppColors.outlineStrong,
             width: 1.5,
           ),
