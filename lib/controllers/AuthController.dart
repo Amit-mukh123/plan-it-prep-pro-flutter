@@ -96,8 +96,8 @@ class AuthController extends StateNotifier<AuthState> {
         method: "POST",
         data: body,
       );
-      response = response["data"];
-      print("API Response: $response");
+      //debugPrint("API Response: $response");
+
 
       if (response["status"] == true) {
         state = state.copyWith(isLoading: false);
