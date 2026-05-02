@@ -8,6 +8,7 @@ import 'package:planit_prep_pro/providers/AiResponse_provider.dart';
 import 'package:planit_prep_pro/providers/meal_plan_provider.dart';
 import 'package:planit_prep_pro/providers/user_provider.dart';
 import 'package:planit_prep_pro/providers/user_summary_state_provider.dart';
+import 'package:planit_prep_pro/widgets/animation.dart';
 import '../models/app_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
@@ -58,6 +59,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _fetchMealPlan({required bool refresh}) async {
+    // NEW: Clear existing data so the loading animation can show
+    if (refresh) {
+      setState(() {
+        _mealPlanData = null;
+      });
+    }
+
     final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final body = {"date": currentDate, "refresh": refresh};
 
@@ -65,23 +73,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .read(aiResponseControllerProvider.notifier)
         .generateMealPlan(body);
 
-    debugPrint("Final Data received in UI: $response");
-
-    if (response != null) {
+    if (response != null && mounted) {
       setState(() {
         _mealPlanData = response;
       });
-
-      // Globally update the meal plan so MealScreen can react to it
       ref.read(mealPlanStateProvider.notifier).state = response;
-
-      await _loadUserSummary(); //loading user summary details
-
-      if (response['meals'] != null) {
-        debugPrint("Meals Count: ${(response['meals'] as List).length}");
-      }
-    } else {
-      debugPrint("Response was null from controller.");
+      await _loadUserSummary();
     }
   }
 
@@ -234,23 +231,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const SectionHeader(title: "Today's Meals"),
-        IconButton(
-          onPressed: isLoading ? null : () => _fetchMealPlan(refresh: true),
-          icon: isLoading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primary,
-                  ),
-                )
-              : const Icon(
-                  Icons.refresh_rounded,
-                  size: 22,
-                  color: AppColors.primary,
-                ),
-        ),
+        if (!isLoading)
+          IconButton(
+            onPressed: () => _fetchMealPlan(refresh: true),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              size: 22,
+              color: AppColors.primary,
+            ),
+          ),
       ],
     );
   }
@@ -283,11 +272,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (isLoading) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: CircularProgressIndicator(color: AppColors.primary),
+          padding: EdgeInsets.symmetric(vertical: 60),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Your custom animation class
+              NutriPulseAnimation(size: 60),
+              SizedBox(height: 16),
+              Text(
+                "Fetching Todays's Meals...",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
+
+    
 
     return const Center(
       child: Padding(

@@ -41,7 +41,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false);
         return true;
       } else {
-        _showError(response["msg"] ?? "Failed to send OTP. Please try again.");
+        //_showError(response["msg"] ?? "Failed to send OTP. Please try again.");
         state = state.copyWith(isLoading: false);
         return false;
       }

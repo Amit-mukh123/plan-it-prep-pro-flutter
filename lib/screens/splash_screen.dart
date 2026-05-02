@@ -1,26 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import 'welcome_screen.dart';
+import '../providers/auth_provider.dart'; // Assuming your authControllerProvider is defined here
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-        );
+    _handleNavigation();
+  }
+
+  Future<void> _handleNavigation() async {
+    // Wait for the minimum splash duration (2 seconds)
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // Call checkAuth to refresh state from storage
+    await ref.read(authProvider.notifier).checkAuth();
+
+    // Read the updated auth state
+    final authState = ref.read(authProvider);
+
+    if (mounted) {
+      if (authState.isLoggedIn) {
+        Navigator.of(context).pushReplacementNamed('/main-shell');
+      } else {
+        Navigator.of(context).pushReplacementNamed('/login');
       }
-    });
+    }
   }
 
   @override
