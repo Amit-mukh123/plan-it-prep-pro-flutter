@@ -38,19 +38,16 @@ class MealDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
+        top: false, // Allows hero to go to top, safer for modern notches
         child: Column(
           children: [
-            // Hero Image Section
+            // 1. Hero Image Section
             Stack(
               children: [
                 Container(
                   height: 220,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: bgColor.withOpacity(
-                      0.2,
-                    ), // Use opacity for better contrast
-                  ),
+                  decoration: BoxDecoration(color: bgColor.withOpacity(0.2)),
                   child: Center(
                     child: Text(
                       meal['emoji'] ?? '🍲',
@@ -58,8 +55,10 @@ class MealDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 12,
+                  left: 12,
+                  right: 12,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -77,7 +76,7 @@ class MealDetailScreen extends StatelessWidget {
               ],
             ),
 
-            // Content Section
+            // 2. Scrollable Content Section
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -177,30 +176,41 @@ class MealDetailScreen extends StatelessWidget {
                           isLast: e.key == steps.length - 1,
                         ),
                       ),
-
-                    const SizedBox(height: 32),
-
-                    // Bottom Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        onPressed: () {},
-                        icon: const Icon(Icons.add_task_rounded),
-                        label: const Text(
-                          'Add to Log',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(
+                      height: 20,
+                    ), // Padding to ensure last step isn't tight
                   ],
+                ),
+              ),
+            ),
+
+            // 3. Fixed Bottom Action Button (Prevents Overlapping)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                border: Border(
+                  top: BorderSide(color: AppColors.outline.withOpacity(0.1)),
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () {},
+                  icon: const Icon(Icons.add_task_rounded),
+                  label: const Text(
+                    'Add to Log',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
