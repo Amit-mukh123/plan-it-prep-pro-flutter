@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:ileum/features/auth/data/auth_provider.dart';
 import 'package:ileum/features/user_profile/data/user_summary_state_provider.dart';
-import 'package:ileum/features/location/presentation/location_test.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
 

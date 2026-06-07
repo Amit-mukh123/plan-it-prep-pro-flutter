@@ -59,6 +59,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           if (index != -1) {
             setState(() => _dietIndex = index);
           }
+          setState(() {}); // trigger rebuild to evaluate _isFormValid
         }
       }
     });
@@ -74,13 +75,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     super.dispose();
   }
 
+  bool get _isFormValid {
+    return _fullNameController.text.trim().isNotEmpty &&
+        _selectedGender != null &&
+        _ageController.text.trim().isNotEmpty &&
+        _heightController.text.trim().isNotEmpty &&
+        _weightController.text.trim().isNotEmpty &&
+        _targetWeightController.text.trim().isNotEmpty;
+  }
+
   /// Logic to capture inputs and call the storeUserProfileDetails function
   Future<void> _handleSaveProfile() async {
     // Basic validation
-    if (_fullNameController.text.trim().isEmpty || _selectedGender == null) {
+    if (!_isFormValid) {
       Get.snackbar(
         "Required Fields",
-        "Please fill in your name and gender",
+        "Please fill in all your details to continue",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orangeAccent,
         colorText: Colors.white,
@@ -188,6 +198,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               TextField(
                 controller: _fullNameController,
                 enabled: !isLoading,
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(hintText: 'Enter Name'),
               ),
               const SizedBox(height: 12),
@@ -219,6 +230,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         TextField(
                           controller: _ageController,
                           enabled: !isLoading,
+                          onChanged: (_) => setState(() {}),
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(hintText: '00'),
                         ),
@@ -235,6 +247,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         TextField(
                           controller: _heightController,
                           enabled: !isLoading,
+                          onChanged: (_) => setState(() {}),
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(hintText: '00'),
                         ),
@@ -250,6 +263,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               TextField(
                 controller: _weightController,
                 enabled: !isLoading,
+                onChanged: (_) => setState(() {}),
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(hintText: '00'),
               ),
@@ -260,6 +274,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               TextField(
                 controller: _targetWeightController,
                 enabled: !isLoading,
+                onChanged: (_) => setState(() {}),
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(hintText: '00'),
               ),
@@ -328,11 +343,25 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
+              if (!_isFormValid)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Center(
+                    child: Text(
+                      'Please fill all details to continue',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ),
+                ),
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : _handleSaveProfile,
+                  onPressed: isLoading || !_isFormValid ? null : _handleSaveProfile,
                   child: isLoading
                       ? const SizedBox(
                           height: 20,

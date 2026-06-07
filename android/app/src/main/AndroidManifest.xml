@@ -11,7 +11,7 @@
     <!--========================-->
 
     <application
-        android:label="ileum"
+        android:label="FitPumpkin"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true">

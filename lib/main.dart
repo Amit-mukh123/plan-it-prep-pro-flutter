@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added Riverpod import
-import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:ileum/services/location/location_provider.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/routes.dart';
 
@@ -42,17 +40,17 @@ void main() async {
     ),
   );
 
-  // Wrapped PlanitPrepApp with ProviderScope to enable Riverpod
-  runApp(const ProviderScope(child: PlanitPrepApp()));
+  // Wrapped FitPumpkinApp with ProviderScope to enable Riverpod
+  runApp(const ProviderScope(child: FitPumpkinApp()));
 }
 
-class PlanitPrepApp extends StatelessWidget {
-  const PlanitPrepApp({super.key});
+class FitPumpkinApp extends StatelessWidget {
+  const FitPumpkinApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'PlanitPrep',
+      title: 'FitPumpkin',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
 

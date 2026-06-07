@@ -51,7 +51,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       iconColor: Color(0xFF92400E),
       icon: Icons.email_rounded,
       title: 'Email Support',
-      subtitle: 'hello@planitprep.app',
+      subtitle: 'hello@fitpumpkin.app',
       isLast: true,
     ),
   ];

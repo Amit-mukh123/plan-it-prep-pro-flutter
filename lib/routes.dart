@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:ileum/features/dashboard/presentation/coming_soon_screen.dart';
-import 'package:ileum/features/meals/presentation/batch_meal_screen.dart';
 import 'package:ileum/features/grocery/presentation/grocery_screen.dart';
 import 'package:ileum/features/user_profile/presentation/health_goals_screen.dart';
 import 'package:ileum/features/auth/presentation/login_screen.dart';
@@ -13,7 +12,6 @@ import 'package:ileum/features/user_profile/presentation/privacy_settings_screen
 import 'package:ileum/features/user_profile/presentation/profile_setup_screen.dart';
 import 'package:ileum/features/dashboard/presentation/progress_screen.dart';
 import 'package:ileum/features/auth/presentation/register_screen.dart';
-import 'package:ileum/features/meals/presentation/surprise_meal_screen.dart';
 import 'package:ileum/features/user_profile/presentation/user_config_qs.dart';
 import 'package:ileum/features/auth/presentation/welcome_screen.dart';
 

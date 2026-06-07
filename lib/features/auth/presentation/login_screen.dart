@@ -198,7 +198,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const Icon(Icons.eco_rounded, color: AppColors.primary, size: 28),
             const SizedBox(width: 8),
             Text(
-              'PlanitPrep',
+              'FitPumpkin',
               style: GoogleFonts.dmSerifDisplay(
                 fontSize: 22,
                 color: AppColors.primaryDark,

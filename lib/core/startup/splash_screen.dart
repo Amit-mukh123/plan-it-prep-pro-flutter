@@ -62,7 +62,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'PlanitPrep',
+              'FitPumpkin',
               style: GoogleFonts.dmSerifDisplay(
                 fontSize: 36,
                 color: Colors.white,

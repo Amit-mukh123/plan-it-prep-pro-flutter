@@ -204,7 +204,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Row(
         children: [
           Text(
-            'PlanitPrep',
+            'FitPumpkin',
             style: GoogleFonts.dmSerifDisplay(
               fontSize: 24,
               color: AppColors.primaryDark,
