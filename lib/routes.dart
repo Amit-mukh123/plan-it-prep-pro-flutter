@@ -115,6 +115,6 @@ abstract class _Paths {
   static const mealDetails = '/meal-details';
   static const mainShell = '/main-shell';
   static const privacy = '/privacy';
-  static const qsAndAns = '/qs_and_ans';
+  static const qsAndAns = 's/qs_and_an';
   //static const scanIngredients = '/scan-ingredients';
 }

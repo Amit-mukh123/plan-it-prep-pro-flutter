@@ -14,6 +14,7 @@ import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
 import 'package:ileum/features/meals/presentation/meal_card.dart';
 import 'package:ileum/features/meals/presentation/change_meal_sheet.dart';
+import 'package:ileum/core/common/emoji_decoder.dart';
 
 // ─── SAFE PARSING HELPERS ──────────────────────────────────────────
 
@@ -250,6 +251,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Column(
         children: meals.map((rawMeal) {
           final sanitizedMeal = Map<String, dynamic>.from(rawMeal);
+          
+          // Decode malformed AI emoji strings using the high-tech decoder
+          sanitizedMeal['emoji'] = EmojiDecoder.decode(rawMeal['emoji']?.toString());
+
           sanitizedMeal['calories'] = safeInt(rawMeal['calories']);
           sanitizedMeal['protein'] = safeInt(rawMeal['protein']);
           sanitizedMeal['carbs'] = safeInt(rawMeal['carbs']);
