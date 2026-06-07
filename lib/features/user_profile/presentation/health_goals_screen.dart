@@ -35,7 +35,7 @@ class _HealthGoalsScreenState extends ConsumerState<HealthGoalsScreen> {
         final int savedCals = userData['caloriesTotal'] ?? 1800;
 
         setState(() {
-          _calories = savedCals.toDouble();
+          _calories = savedCals.toDouble().clamp(1200.0, 3000.0);
           if (savedGoal.isNotEmpty) {
             _selectedGoal = _goals.indexWhere((g) => g.label == savedGoal);
             if (_selectedGoal == -1) _selectedGoal = 0;

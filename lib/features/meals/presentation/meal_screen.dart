@@ -122,24 +122,24 @@ class _DayPlanView extends StatelessWidget {
         children: [
           ...meals!.map((m) => _DietMealCard(meal: m)),
           const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // Handle regeneration logic here if needed
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: AppColors.primaryDark,
-                elevation: 0,
-                shape: const StadiumBorder(),
-              ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Regenerate Plan'),
-            ),
-          ),
-          const SizedBox(height: 8),
+          // SizedBox(
+          //   width: double.infinity,
+          //   height: 48,
+          //   child: ElevatedButton.icon(
+          //     onPressed: () {
+          //       // Handle regeneration logic here if needed
+          //     },
+          //     style: ElevatedButton.styleFrom(
+          //       backgroundColor: AppColors.primaryContainer,
+          //       foregroundColor: AppColors.primaryDark,
+          //       elevation: 0,
+          //       shape: const StadiumBorder(),
+          //     ),
+          //     icon: const Icon(Icons.refresh_rounded),
+          //     label: const Text('Regenerate Plan'),
+          //   ),
+          // ),
+          // const SizedBox(height: 8),
         ],
       ),
     );
