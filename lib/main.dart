@@ -11,20 +11,20 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Create a ProviderContainer to read providers before runApp
-  final container = ProviderContainer();
+  //final container = ProviderContainer();
 
   // --- START LOCATION CHECK ---
-  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    // This will open the system location settings immediately on startup
-    await Geolocator.openLocationSettings();
-  }
+  // bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  // if (!serviceEnabled) {
+  //   // This will open the system location settings immediately on startup
+  //   await Geolocator.openLocationSettings();
+  // }
   // --- END LOCATION CHECK ---
 
   // This checks storage; if empty, it calls the loadLocation function
   debugPrint("running fetch location ...........................");
   // Do not await this, so runApp can execute immediately and prevent ANR
-  container.read(locationProvider.notifier).initLocation();
+  // container.read(locationProvider.notifier).initLocation();
 
   // Force portrait orientation
   SystemChrome.setPreferredOrientations([

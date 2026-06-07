@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:ileum/features/dashboard/presentation/coming_soon_screen.dart';
 import 'package:ileum/features/meals/presentation/batch_meal_screen.dart';
 import 'package:ileum/features/grocery/presentation/grocery_screen.dart';
 import 'package:ileum/features/user_profile/presentation/health_goals_screen.dart';
@@ -51,8 +52,8 @@ class AppPages {
       name: Routes.dietPlan,
       page: () => const Scaffold(body: Center(child: Text('Diet Plan Screen'))),
     ),
-    GetPage(name: Routes.batchMeal, page: () => const BatchMealScreen()),
-    GetPage(name: Routes.surpriseMeal, page: () => const SurpriseMealScreen()),
+    GetPage(name: Routes.batchMeal, page: () => const ComingSoonScreen()),
+    GetPage(name: Routes.surpriseMeal, page: () => const ComingSoonScreen()),
     GetPage(name: Routes.mealDetails, page: () => const MealDetailScreen()),
     GetPage(name: Routes.groceryList, page: () => const GroceryScreen()),
 
@@ -115,6 +116,6 @@ abstract class _Paths {
   static const mealDetails = '/meal-details';
   static const mainShell = '/main-shell';
   static const privacy = '/privacy';
-  static const qsAndAns = 's/qs_and_an';
+  static const qsAndAns = '/qs_and_an';
   //static const scanIngredients = '/scan-ingredients';
 }

@@ -141,15 +141,15 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    ElevatedButton(
-                      onPressed: () {
-                        Get.to(() => const LocationScreen());
-                      },
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     Get.to(() => const LocationScreen());
+                    //   },
 
-                      child: const Text("Open Location Screen"),
-                    ),
+                    //   child: const Text("Open Location Screen"),
+                    // ),
 
-                    const SizedBox(height: 20),
+                    // const SizedBox(height: 20),
 
                     // Settings List
                     AppCard(
