@@ -16,14 +16,16 @@ class AuthController extends StateNotifier<AuthState> {
 
   // Helper for consistent error reporting
   void _showError(String message) {
-    Get.snackbar(
-      "Error",
-      message,
+    Get.rawSnackbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+      ),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       borderRadius: 12,
+      padding: const EdgeInsets.all(16),
     );
   }
 
@@ -47,6 +49,47 @@ class AuthController extends StateNotifier<AuthState> {
       }
     } catch (e) {
       _showError("Connection error. Please check your internet.");
+      state = state.copyWith(isLoading: false);
+      return false;
+    }
+  }
+
+  // LOGIN WITH PASSWORD -> save tokens and navigate to profile setup or main shell
+  Future<bool> loginWithPassword(Map<String, dynamic> body) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final response = await api.sendRequest(
+        path: "/login-email",
+        method: "POST",
+        data: body,
+      );
+
+      if (response["status"] == true) {
+        final data = response["data"];
+
+        if (data != null && data["access_token"] != null) {
+          await storage.saveTokens(data["access_token"], data["refresh_token"] ?? "");
+
+          state = state.copyWith(
+            isLoggedIn: true,
+            accessToken: data["access_token"],
+            refreshToken: data["refresh_token"] ?? "",
+            isLoading: false,
+          );
+          return true;
+        } else {
+          _showError("Invalid response format.");
+          state = state.copyWith(isLoading: false);
+          return false;
+        }
+      } else {
+        final errorMsg = response["message"] ?? response["data"]?["msg"] ?? response["data"]?["message"] ?? "Invalid email or password.";
+        _showError(errorMsg);
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+    } catch (e) {
+      _showError("Login failed. Please try again.");
       state = state.copyWith(isLoading: false);
       return false;
     }

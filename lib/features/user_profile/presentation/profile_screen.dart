@@ -6,6 +6,7 @@ import 'package:ileum/features/auth/data/auth_provider.dart';
 import 'package:ileum/features/user_profile/data/user_summary_state_provider.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -169,8 +170,15 @@ class ProfileScreen extends ConsumerWidget {
                             iconBg: const Color(0xFFEDE9FE),
                             iconColor: const Color(0xFF6D28D9),
                             icon: Icons.lock_rounded,
-                            label: 'Privacy',
-                            onTap: () => Get.toNamed('/privacy'),
+                            label: 'Privacy Policy',
+                            onTap: () async {
+                              final Uri url = Uri.parse(
+                                'https://planit-prep-web.vercel.app/privacy-policy',
+                              );
+                              if (!await launchUrl(url)) {
+                                debugPrint('Could not launch $url');
+                              }
+                            },
                           ),
                           _ClickableSettingsRow(
                             iconBg: const Color(0xFFFEF3C7),
