@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/features/auth/data/auth_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -14,42 +15,62 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   final bool isRegister = Get.arguments?['isRegister'] ?? false;
+  bool _loginWithOtp = false;
 
   @override
   void dispose() {
     _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final Map<String, dynamic> body = {
-      "email": _emailController.text.trim(),
-    };
+    if (_loginWithOtp) {
+      final Map<String, dynamic> body = {
+        "email": _emailController.text.trim(),
+      };
 
-    final bool isSuccess = await ref.read(authProvider.notifier).login(body);
+      final bool isSuccess = await ref.read(authProvider.notifier).login(body);
 
-    if (isSuccess) {
-      Get.offNamed(
-        '/verify-otp',
-        arguments: {
-          'email': _emailController.text.trim(),
-          'isRegister': isRegister,
-        },
-      );
+      if (isSuccess) {
+        Get.offNamed(
+          '/verify-otp',
+          arguments: {
+            'email': _emailController.text.trim(),
+            'isRegister': isRegister,
+          },
+        );
+      } else {
+        Get.snackbar(
+          "Account not found",
+          "Please register to continue",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orangeAccent,
+          colorText: Colors.white,
+        );
+        Get.toNamed('/register');
+      }
     } else {
-      Get.snackbar(
-        "Account not found",
-        "Please register to continue",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orangeAccent,
-        colorText: Colors.white,
-      );
-      Get.toNamed('/register');
+      final Map<String, dynamic> body = {
+        "email": _emailController.text.trim(),
+        "password": _passwordController.text,
+      };
+
+      final bool isSuccess = await ref.read(authProvider.notifier).loginWithPassword(body);
+
+      if (isSuccess) {
+        if (isRegister) {
+          Get.offAllNamed('/profile-setup');
+        } else {
+          Get.offAllNamed('/main-shell');
+        }
+      }
     }
   }
 
@@ -116,6 +137,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           return null;
                         },
                       ),
+                      const SizedBox(height: 16),
+                      if (!_loginWithOtp) ...[
+                        const _Label('Password'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _passwordController,
+                          enabled: !isLoading,
+                          obscureText: true,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 15,
+                            color: AppColors.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Enter your password',
+                            filled: true,
+                            fillColor: AppColors.surface,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: AppColors.outlineStrong,
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          validator: (val) {
+                            if (!_loginWithOtp) {
+                              if (val == null || val.isEmpty) {
+                                return "Enter your password";
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _loginWithOtp,
+                            activeColor: AppColors.primary,
+                            onChanged: isLoading
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      _loginWithOtp = val ?? false;
+                                    });
+                                  },
+                          ),
+                          Text(
+                            "Login with OTP",
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
@@ -140,12 +229,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 )
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.sms_rounded, size: 20),
-                                    SizedBox(width: 10),
+                                  children: [
+                                    const Icon(Icons.login_rounded, size: 20),
+                                    const SizedBox(width: 10),
                                     Text(
-                                      'Send OTP',
-                                      style: TextStyle(
+                                      _loginWithOtp ? 'Send OTP' : 'Login',
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
                                       ),
@@ -174,6 +263,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final Uri url = Uri.parse('https://planit-prep-web.vercel.app/privacy-policy');
+                            if (!await launchUrl(url)) {
+                              debugPrint('Could not launch $url');
+                            }
+                          },
+                          child: Text(
+                            "Privacy Policy",
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),
