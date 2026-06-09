@@ -2,11 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added Riverpod import
 import 'package:get/get.dart';
-import 'theme/app_theme.dart';
-import 'routes/app_routes.dart';
+import 'package:ileum/core/theme/app_theme.dart';
+import 'package:ileum/routes.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Create a ProviderContainer to read providers before runApp
+  //final container = ProviderContainer();
+
+  // --- START LOCATION CHECK ---
+  // bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  // if (!serviceEnabled) {
+  //   // This will open the system location settings immediately on startup
+  //   await Geolocator.openLocationSettings();
+  // }
+  // --- END LOCATION CHECK ---
+
+  // This checks storage; if empty, it calls the loadLocation function
+  debugPrint("running fetch location ...........................");
+  // Do not await this, so runApp can execute immediately and prevent ANR
+  // container.read(locationProvider.notifier).initLocation();
 
   // Force portrait orientation
   SystemChrome.setPreferredOrientations([
@@ -24,28 +40,24 @@ void main() {
     ),
   );
 
-  // Wrapped PlanitPrepApp with ProviderScope to enable Riverpod
-  runApp(
-    const ProviderScope(
-      child: PlanitPrepApp(),
-    ),
-  );
+  // Wrapped FitPumpkinApp with ProviderScope to enable Riverpod
+  runApp(const ProviderScope(child: FitPumpkinApp()));
 }
 
-class PlanitPrepApp extends StatelessWidget {
-  const PlanitPrepApp({super.key});
+class FitPumpkinApp extends StatelessWidget {
+  const FitPumpkinApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'PlanitPrep',
+      title: 'FitPumpkin',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      
+
       // Using the initial route and routes list from AppPages
-      initialRoute: AppPages.initial, 
+      initialRoute: AppPages.initial,
       getPages: AppPages.routes,
-      
+
       // Default transition for all pages
       defaultTransition: Transition.cupertino,
     );
