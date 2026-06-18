@@ -61,6 +61,8 @@ class AiResponseController extends StateNotifier<bool> {
         _showError(response["message"] ?? "Failed to generate plan");
         if (response["message"]?.contains("User profile not found") ?? false) {
           Get.toNamed('/profile-setup');
+        } else if (response["message"]?.contains("User config not found") ?? false) {
+          Get.toNamed('/user-goal');
         }
         return null;
       }
