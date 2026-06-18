@@ -20,7 +20,15 @@ class ProfileScreen extends ConsumerWidget {
 
     // Access the 'data' map from your JSON structure
     final userData = rawState['data'] ?? {};
-    final configAnswers = userData['config']?['answers'] ?? {};
+
+    // Safely extract config — the API may return 'config' as a List or a Map
+    final dynamic rawConfig = userData['config'];
+    final Map<String, dynamic> configMap = (rawConfig is Map<String, dynamic>)
+        ? rawConfig
+        : (rawConfig is List && rawConfig.isNotEmpty && rawConfig.first is Map)
+            ? Map<String, dynamic>.from(rawConfig.first as Map)
+            : {};
+    final configAnswers = configMap['answers'] ?? {};
     final String currentGoal = configAnswers['health_goal'] ?? 'Not Set';
 
     return Scaffold(

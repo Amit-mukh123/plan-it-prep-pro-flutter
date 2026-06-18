@@ -39,7 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final bool isSuccess = await ref.read(authProvider.notifier).login(body);
 
       if (isSuccess) {
-        Get.offNamed(
+        Get.toNamed(
           '/verify-otp',
           arguments: {
             'email': _emailController.text.trim(),
