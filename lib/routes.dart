@@ -60,6 +60,7 @@ class AppPages {
     GetPage(name: Routes.myProgress, page: () => const ProgressScreen()),
 
     GetPage(name: Routes.privacy, page: () => const PrivacySettingsScreen()),
+    GetPage(name: Routes.helpSupport, page: () => const PrivacySettingsScreen()),
 
     GetPage(
       name: Routes.notifications,
@@ -89,6 +90,7 @@ abstract class Routes {
   static const mealDetails = _Paths.mealDetails;
   static const mainShell = _Paths.mainShell;
   static const privacy = _Paths.privacy;
+  static const helpSupport = _Paths.helpSupport;
   static const qsAndAns = _Paths.qsAndAns;
   static const register = _Paths.register;
 
@@ -114,6 +116,7 @@ abstract class _Paths {
   static const mealDetails = '/meal-details';
   static const mainShell = '/main-shell';
   static const privacy = '/privacy';
+  static const helpSupport = '/help-support';
   static const qsAndAns = '/qs_and_ans';
   //static const scanIngredients = '/scan-ingredients';
 }

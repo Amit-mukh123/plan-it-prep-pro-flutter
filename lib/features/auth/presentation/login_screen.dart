@@ -20,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   final bool isRegister = Get.arguments?['isRegister'] ?? false;
   bool _loginWithOtp = false;
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -32,9 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_loginWithOtp) {
-      final Map<String, dynamic> body = {
-        "email": _emailController.text.trim(),
-      };
+      final Map<String, dynamic> body = {"email": _emailController.text.trim()};
 
       final bool isSuccess = await ref.read(authProvider.notifier).login(body);
 
@@ -62,7 +61,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         "password": _passwordController.text,
       };
 
-      final bool isSuccess = await ref.read(authProvider.notifier).loginWithPassword(body);
+      final bool isSuccess = await ref
+          .read(authProvider.notifier)
+          .loginWithPassword(body);
 
       if (isSuccess) {
         if (isRegister) {
@@ -144,7 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         TextFormField(
                           controller: _passwordController,
                           enabled: !isLoading,
-                          obscureText: true,
+                          obscureText: !_showPassword,
                           style: GoogleFonts.dmSans(
                             fontSize: 15,
                             color: AppColors.textPrimary,
@@ -156,6 +157,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 16,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showPassword
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                                color: AppColors.textSecondary,
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _showPassword = !_showPassword;
+                                      });
+                                    },
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -271,7 +287,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Center(
                         child: GestureDetector(
                           onTap: () async {
-                            final Uri url = Uri.parse('https://planit-prep-web.vercel.app/privacy-policy');
+                            final Uri url = Uri.parse(
+                              'https://planit-prep-web.vercel.app/privacy-policy',
+                            );
                             if (!await launchUrl(url)) {
                               debugPrint('Could not launch $url');
                             }
@@ -339,4 +357,3 @@ class _Label extends StatelessWidget {
     ),
   );
 }
-

@@ -219,10 +219,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _buildMealSectionHeader(isLoading),
                       const SizedBox(height: 8),
                       _buildMealList(isLoading),
-                      const SizedBox(height: 12),
-                      AddMealButton(
-                        onTap: () => ChangeMealSheet.show(context, 'Snack'),
-                      ),
+                      // const SizedBox(height: 12),
+                      // AddMealButton(
+                      //   onTap: () => ChangeMealSheet.show(context, 'Snack'),
+                      // ),
                       const SectionHeader(title: 'Quick Actions'),
                       _QuickActionsGrid(),
                     ],

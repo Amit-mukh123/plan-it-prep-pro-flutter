@@ -1,13 +1,18 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ileum/config/app_config.dart' as app_config;
 import 'package:ileum/features/auth/data/auth_provider.dart';
 
 class ApiController {
   late Dio _dio;
+  late final Future<String> _appVersionFuture;
   final Ref ref;
 
   ApiController(this.ref) {
+    _appVersionFuture = _loadAppVersion();
+
     _dio = Dio(
       BaseOptions(
         baseUrl: app_config.baseUrl,
@@ -30,6 +35,11 @@ class ApiController {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final authState = ref.read(authProvider);
+          final accessToken = authState.accessToken;
+          final appVersion = await _appVersionFuture;
+
+          debugPrint("Access Token: $accessToken");
+          debugPrint("App Version: $appVersion");
 
           final isAuthApi =
               options.path.contains("send-otp") ||
@@ -37,9 +47,11 @@ class ApiController {
               options.path.contains("register") ||
               options.path.contains("verify-otp");
 
-          if (!isAuthApi && authState.accessToken != null) {
-            options.headers["Authorization"] =
-                "Bearer ${authState.accessToken}";
+          options.headers["x-app-version"] = appVersion;
+          options.headers["x-device-platform"] = "android";
+
+          if (!isAuthApi && accessToken != null) {
+            options.headers["Authorization"] = "Bearer $accessToken";
           }
 
           return handler.next(options);
@@ -53,6 +65,15 @@ class ApiController {
         },
       ),
     );
+  }
+
+  Future<String> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return packageInfo.version;
+    } catch (e) {
+      return "unknown";
+    }
   }
 
   Future<Map<String, dynamic>> sendRequest({
