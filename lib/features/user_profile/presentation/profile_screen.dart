@@ -6,6 +6,7 @@ import 'package:ileum/features/auth/data/auth_provider.dart';
 import 'package:ileum/features/user_profile/data/user_summary_state_provider.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
+import 'package:ileum/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -193,13 +194,63 @@ class ProfileScreen extends ConsumerWidget {
                             iconColor: const Color(0xFF92400E),
                             icon: Icons.help_outline_rounded,
                             label: 'Help & Support',
-                            onTap: () => Get.toNamed('/help-support'),
+                            onTap: () => Get.toNamed(Routes.helpSupport),
                           ),
                           // Logout Button
                           GestureDetector(
                             onTap: () async {
-                              await ref.read(authProvider.notifier).logout();
-                              Get.offAllNamed('/login');
+                              Get.dialog(
+                                AlertDialog(
+                                  backgroundColor: AppColors.surface,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  title: Text(
+                                    'Log Out?',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  content: Text(
+                                    'Are you sure you want to log out of your account?',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 14,
+                                      color: AppColors.textSecondary,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Get.back(),
+                                      child: Text(
+                                        'Cancel',
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryDark,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Get.back();
+                                        await ref.read(authProvider.notifier).logout();
+                                        Get.offAllNamed('/login');
+                                      },
+                                      child: Text(
+                                        'Log Out',
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 14),

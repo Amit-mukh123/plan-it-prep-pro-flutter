@@ -23,6 +23,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   double _passwordStrength = 0;
   String _strengthText = "";
   Color _strengthColor = Colors.transparent;
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -169,6 +170,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   hintText: "••••••••",
                   isPassword: true,
                   enabled: !isLoading,
+                  showPassword: _showPassword,
+                  onPasswordVisibilityToggle: () {
+                    setState(() {
+                      _showPassword = !_showPassword;
+                    });
+                  },
                   onChanged: _checkPasswordStrength,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -342,9 +349,11 @@ class _CustomTextField extends StatelessWidget {
   final String hintText;
   final bool isPassword;
   final bool enabled;
+  final bool showPassword;
   final int? maxLength;
   final TextInputType keyboardType;
   final void Function(String)? onChanged;
+  final VoidCallback? onPasswordVisibilityToggle;
   final String? Function(String?)? validator;
 
   const _CustomTextField({
@@ -352,9 +361,11 @@ class _CustomTextField extends StatelessWidget {
     required this.hintText,
     this.isPassword = false,
     this.enabled = true,
+    this.showPassword = false,
     this.maxLength,
     this.keyboardType = TextInputType.text,
     this.onChanged,
+    this.onPasswordVisibilityToggle,
     this.validator,
   });
 
@@ -362,7 +373,7 @@ class _CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword,
+      obscureText: isPassword ? !showPassword : false,
       keyboardType: keyboardType,
       validator: validator,
       enabled: enabled,
@@ -375,6 +386,17 @@ class _CustomTextField extends StatelessWidget {
         hintStyle: TextStyle(
           color: AppColors.textSecondary.withValues(alpha: 0.4),
         ),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  showPassword
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  color: AppColors.textSecondary,
+                ),
+                onPressed: enabled ? onPasswordVisibilityToggle : null,
+              )
+            : null,
         filled: true,
         fillColor: enabled
             ? AppColors.surface

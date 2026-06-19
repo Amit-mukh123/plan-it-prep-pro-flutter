@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:ileum/core/api/api_provider.dart';
 import 'package:ileum/features/meals/data/ai_response_provider.dart';
 import 'package:ileum/features/meals/data/meal_plan_provider.dart';
 import 'package:ileum/features/user_profile/data/user_provider.dart';
@@ -49,6 +50,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   Map<String, dynamic>? _mealPlanData;
+  Map<String, dynamic>? _maintenanceData;
 
   @override
   void initState() {
@@ -56,6 +58,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserSummary();
       _fetchMealPlan(refresh: false);
+      _loadMaintenance();
+    });
+  }
+
+  Future<void> _loadMaintenance() async {
+    final response = await ref.read(apiControllerProvider).sendRequest(
+          path: "/maintenance/all",
+          method: "GET",
+        );
+
+    if (response["status"] != true || !mounted) {
+      return;
+    }
+
+    final responseData = response["data"];
+    final List<dynamic> maintenances = responseData is Map
+        ? (responseData["data"] as List<dynamic>? ?? const [])
+        : const [];
+
+    if (maintenances.isEmpty) {
+      return;
+    }
+
+    maintenances.sort((left, right) {
+      final leftStart = _parseMaintenanceDateTime(left is Map ? left['start_time'] : null);
+      final rightStart = _parseMaintenanceDateTime(right is Map ? right['start_time'] : null);
+
+      if (leftStart == null && rightStart == null) return 0;
+      if (leftStart == null) return 1;
+      if (rightStart == null) return -1;
+      return leftStart.compareTo(rightStart);
+    });
+
+    setState(() {
+      _maintenanceData = Map<String, dynamic>.from(maintenances.first as Map);
     });
   }
 
@@ -166,6 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           children: [
             _buildAppBar(),
+            if (_maintenanceData != null) _buildMaintenanceBanner(),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () => _fetchMealPlan(refresh: false),
@@ -181,10 +219,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _buildMealSectionHeader(isLoading),
                       const SizedBox(height: 8),
                       _buildMealList(isLoading),
-                      const SizedBox(height: 12),
-                      AddMealButton(
-                        onTap: () => ChangeMealSheet.show(context, 'Snack'),
-                      ),
+                      // const SizedBox(height: 12),
+                      // AddMealButton(
+                      //   onTap: () => ChangeMealSheet.show(context, 'Snack'),
+                      // ),
                       const SectionHeader(title: 'Quick Actions'),
                       _QuickActionsGrid(),
                     ],
@@ -225,6 +263,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildMaintenanceBanner() {
+    final startTime = _parseMaintenanceDateTime(_maintenanceData?['start_time']);
+    final endTime = _parseMaintenanceDateTime(_maintenanceData?['end_time']);
+
+    if (startTime == null) {
+      return const SizedBox.shrink();
+    }
+
+    final dateText = DateFormat('MMM d, yyyy').format(startTime.toLocal());
+    final timeText = endTime != null
+        ? '${DateFormat('h:mm a').format(startTime.toLocal())} - ${DateFormat('h:mm a').format(endTime.toLocal())}'
+        : DateFormat('h:mm a').format(startTime.toLocal());
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.warningContainer,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Maintenance scheduled',
+              style: GoogleFonts.dmSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.warning,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              dateText,
+              style: GoogleFonts.dmSans(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              timeText,
+              style: GoogleFonts.dmSans(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  DateTime? _parseMaintenanceDateTime(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    try {
+      return DateTime.parse(value.toString());
+    } catch (_) {
+      return null;
+    }
   }
 
   Widget _buildMealSectionHeader(bool isLoading) {

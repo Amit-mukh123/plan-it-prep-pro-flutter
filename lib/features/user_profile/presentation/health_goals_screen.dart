@@ -14,7 +14,6 @@ class HealthGoalsScreen extends ConsumerStatefulWidget {
 
 class _HealthGoalsScreenState extends ConsumerState<HealthGoalsScreen> {
   int _selectedGoal = 0;
-  double _calories = 1800;
 
   static const _goals = [
     _GoalOption(emoji: '⚖️', label: 'Lose Weight'),
@@ -32,10 +31,8 @@ class _HealthGoalsScreenState extends ConsumerState<HealthGoalsScreen> {
         final userData = ref.read(userSummaryProvider)['data'];
         final String savedGoal =
             userData['config']?['answers']?['health_goal'] ?? "";
-        final int savedCals = userData['caloriesTotal'] ?? 1800;
 
         setState(() {
-          _calories = savedCals.toDouble().clamp(1200.0, 3000.0);
           if (savedGoal.isNotEmpty) {
             _selectedGoal = _goals.indexWhere((g) => g.label == savedGoal);
             if (_selectedGoal == -1) _selectedGoal = 0;
@@ -122,73 +119,6 @@ class _HealthGoalsScreenState extends ConsumerState<HealthGoalsScreen> {
               const SizedBox(height: 16),
 
               // Calorie slider
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.07),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Daily Calorie Target',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SliderTheme(
-                            data: SliderThemeData(
-                              activeTrackColor: AppColors.primary,
-                              inactiveTrackColor: AppColors.outline,
-                              thumbColor: AppColors.primary,
-                              overlayColor: AppColors.primary.withValues(
-                                alpha: 0.1,
-                              ),
-                            ),
-                            child: Slider(
-                              min: 1200,
-                              max: 3000,
-                              value: _calories,
-                              onChanged: (v) => setState(() => _calories = v),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryContainer,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: Text(
-                            '${_calories.round()} kcal',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryDark,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
