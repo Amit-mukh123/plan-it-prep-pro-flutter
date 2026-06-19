@@ -3,9 +3,24 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MealDetailScreen extends StatelessWidget {
   const MealDetailScreen({super.key});
+
+  String _getMealSvg(String? mealType) {
+    final type = mealType?.toLowerCase() ?? '';
+    if (type.contains('breakfast')) {
+      return 'assets/svgs/breakfast.svg';
+    } else if (type.contains('lunch')) {
+      return 'assets/svgs/lunch.svg';
+    } else if (type.contains('dinner')) {
+      return 'assets/svgs/dinner.svg';
+    } else if (type.contains('snack')) {
+      return 'assets/svgs/snack.svg';
+    }
+    return 'assets/svgs/default_meal.svg';
+  }
 
   // Helper to safely parse the background color string
   Color _parseColor(dynamic colorData) {
@@ -51,9 +66,14 @@ class MealDetailScreen extends StatelessWidget {
                     color: bgColor.withValues(alpha: 0.2),
                   ),
                   child: Center(
-                    child: Text(
-                      meal['emoji'] ?? '🍲',
-                      style: const TextStyle(fontSize: 80),
+                    child: SvgPicture.asset(
+                      _getMealSvg(meal['mealType']?.toString()),
+                      width: 80,
+                      height: 80,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF1D1D1D),
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
                 ),

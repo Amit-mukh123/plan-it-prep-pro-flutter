@@ -31,19 +31,44 @@ class AiResponseController extends StateNotifier<bool> {
   }
 
   // ==============================
+  // ℹ️ INFO HANDLER
+  // ==============================
+  void _showInfo(String message) {
+    Get.snackbar(
+      "Information",
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.blueAccent,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      duration: const Duration(seconds: 3),
+      icon: const Icon(Icons.info_outline, color: Colors.white),
+    );
+  }
+
+  // ==============================
   // 🧠 GENERATE AI MEAL PLAN
   // ==============================
   Future<Map<String, dynamic>?> generateMealPlan(
     Map<String, dynamic> body,
   ) async {
     state = true;
+    debugPrint("generateMealPlan a dukhe gechi");
     try {
       final response = await api.sendRequest(
         path: "/chat/generate-meal-plan",
         method: "POST",
         data: body,
       );
-      debugPrint(response.toString());
+      // 🔍 DEBUG: Log the full response so we can see what the server returns on error
+      debugPrint("===== generateMealPlan RAW RESPONSE =====");
+      debugPrint("status: ${response['status']}");
+      debugPrint("message: ${response['message']}");
+      debugPrint("data: ${response['data']}");
+      debugPrint("error: ${response['error']}");
+      debugPrint("statusCode: ${response['statusCode']}");
+      debugPrint("=========================================");
       if (response["status"] == true) {
         state = false;
 
@@ -58,12 +83,33 @@ class AiResponseController extends StateNotifier<bool> {
         return Map<String, dynamic>.from(level1);
       } else {
         state = false;
-        _showError(response["message"] ?? "Failed to generate plan");
-        if (response["isProfileSetup"] == false) {
-          Get.toNamed('/profile-setup');
-        } else if (response["isConfigSetup"] == false) {
-          Get.toNamed('/user-goal');
+        final isProfileSetup =
+            response["error"]?["isProfileSetup"] ??
+            response["data"]?["isProfileSetup"];
+        final isConfigSetup =
+            response["error"]?["isConfigSetup"] ??
+            response["data"]?["isConfigSetup"];
+        final msg = (response["message"]?.toString() ?? "").toLowerCase();
+
+        if (isProfileSetup == false ||
+            isProfileSetup == "false" ||
+            msg.contains("profile not found")) {
+          _showInfo(response["message"] ?? "Please complete your profile.");
+          // Return a redirect signal — navigation is handled by the widget layer
+          // to avoid Get.key not being mounted on cold start.
+          return {'__redirect': '/profile-setup'};
+        } else if (isConfigSetup == false ||
+            isConfigSetup == "false" ||
+            msg.contains("config not found")) {
+          _showInfo(
+            response["message"] ?? "Please complete your configuration.",
+          );
+          return {'__redirect': '/user-goal'};
+        } else {
+          debugPrint("Something else else Error : " + response.toString());
+          _showError(response["message"] ?? "Failed to generate plan");
         }
+        debugPrint("Returning null");
         return null;
       }
     } catch (e) {
@@ -99,7 +145,30 @@ class AiResponseController extends StateNotifier<bool> {
 
         return Map<String, dynamic>.from(innerResponse);
       } else {
-        _showError(response["message"] ?? "No saved plan found.");
+        state = false;
+        final isProfileSetup =
+            response["error"]?["isProfileSetup"] ??
+            response["data"]?["isProfileSetup"];
+        final isConfigSetup =
+            response["error"]?["isConfigSetup"] ??
+            response["data"]?["isConfigSetup"];
+        final msg = (response["message"]?.toString() ?? "").toLowerCase();
+
+        if (isProfileSetup == false ||
+            isProfileSetup == "false" ||
+            msg.contains("profile not found")) {
+          _showInfo(response["message"] ?? "Please complete your profile.");
+          return {'__redirect': '/profile-setup'};
+        } else if (isConfigSetup == false ||
+            isConfigSetup == "false" ||
+            msg.contains("config not found")) {
+          _showInfo(
+            response["message"] ?? "Please complete your configuration.",
+          );
+          return {'__redirect': '/user-goal'};
+        } else {
+          _showError("No saved plan found.");
+        }
         return null;
       }
     } catch (e) {

@@ -84,6 +84,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         _targetWeightController.text.trim().isNotEmpty;
   }
 
+  Map<String, double> _calculateSafeWeightRange(double heightCm) {
+    final heightM = heightCm / 100.0;
+    final minWeight = 18.5 * (heightM * heightM);
+    final maxWeight = 24.9 * (heightM * heightM);
+    return {'min': minWeight, 'max': maxWeight};
+  }
+
   /// Logic to capture inputs and call the storeUserProfileDetails function
   Future<void> _handleSaveProfile() async {
     // Basic validation
@@ -98,6 +105,45 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         borderRadius: 12,
       );
       return;
+    }
+
+    final double height = double.tryParse(_heightController.text.trim()) ?? 0;
+    final double targetWeight = double.tryParse(_targetWeightController.text.trim()) ?? 0;
+
+    if (height > 0 && targetWeight > 0) {
+      final safeRange = _calculateSafeWeightRange(height);
+      final minWeight = safeRange['min']!;
+      final maxWeight = safeRange['max']!;
+
+      if (targetWeight < minWeight || targetWeight > maxWeight) {
+        final bool? shouldContinue = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: Text("Target Weight Alert", style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+              content: Text(
+                "Based on your height, a safe target weight is between ${minWeight.toStringAsFixed(1)} kg and ${maxWeight.toStringAsFixed(1)} kg. Are you sure you want to continue with ${targetWeight.toStringAsFixed(1)} kg?",
+                style: GoogleFonts.dmSans(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text("Cancel", style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text("Continue", style: GoogleFonts.dmSans(color: AppColors.primaryDark)),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldContinue != true) {
+          return;
+        }
+      }
     }
 
     // Body formatted with "data" -> "answers" nesting
