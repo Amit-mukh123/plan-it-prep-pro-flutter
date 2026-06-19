@@ -98,7 +98,7 @@ class ApiController {
         break;
       case DioExceptionType.badResponse:
         // Handle cases where the server sends back an error message in the body
-        message =
+        message = 
             e.response?.data?["msg"] ??
             e.response?.data?["message"] ??
             "Server Error (${e.response?.statusCode})";
