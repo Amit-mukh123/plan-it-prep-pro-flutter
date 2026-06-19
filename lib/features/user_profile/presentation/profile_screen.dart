@@ -185,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
                                 'https://planit-prep-web.vercel.app/privacy-policy',
                               );
                               if (!await launchUrl(url)) {
-                                debugPrint('Could not launch $url');
+                                //debugPrint('Could not launch $url');
                               }
                             },
                           ),

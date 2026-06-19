@@ -30,13 +30,13 @@ class LocationNotifier extends StateNotifier<LocationState> {
         final Map<String, dynamic> decodedData = jsonDecode(cachedData);
         // Update state with cached data
         state = LocationState.fromMap(decodedData);
-        debugPrint("Successfully loaded CACHED location data: $cachedData");
+        //debugPrint("Successfully loaded CACHED location data: $cachedData");
       } else {
         // No cache, trigger fresh fetch
         await loadLocation();
       }
     } catch (e) {
-      debugPrint("Error loading cache: $e");
+      //debugPrint("Error loading cache: $e");
       await loadLocation();
     }
   }
@@ -51,9 +51,9 @@ class LocationNotifier extends StateNotifier<LocationState> {
     // 2. Update state with final result (Success or Error)
     state = result;
 
-    debugPrint(
-      "Fresh location fetched: Lat: ${result.latitude}, City: ${result.city}",
-    );
+    // debugPrint(
+    //   "Fresh location fetched: Lat: ${result.latitude}, City: ${result.city}",
+    // );
 
     if (result.status == LocationStatus.success) {
       await _saveToStorage(result);
@@ -66,9 +66,9 @@ class LocationNotifier extends StateNotifier<LocationState> {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = jsonEncode(data.toMap());
       await prefs.setString(_storageKey, jsonString);
-      debugPrint("Data successfully saved to Local Storage: $jsonString");
+     // debugPrint("Data successfully saved to Local Storage: $jsonString");
     } catch (e) {
-      debugPrint("Storage save error: $e");
+      //debugPrint("Storage save error: $e");
     }
   }
 }

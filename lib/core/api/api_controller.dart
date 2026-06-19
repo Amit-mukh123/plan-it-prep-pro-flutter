@@ -38,7 +38,7 @@ class ApiController {
           final accessToken = authState.accessToken;
           final appVersion = await _appVersionFuture;
 
-          debugPrint("Access Token: $accessToken");
+          //debugPrint("Access Token: $accessToken");
           debugPrint("App Version: $appVersion");
 
           final isAuthApi =

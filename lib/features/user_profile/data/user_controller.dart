@@ -49,7 +49,7 @@ class UserController extends StateNotifier<bool> {
         data: body,
       );
 
-      debugPrint("API Response: $response");
+      //debugPrint("API Response: $response");
 
       if (response["status"] == true) {
         state = false;
@@ -100,7 +100,7 @@ class UserController extends StateNotifier<bool> {
         method: "GET",
       );
 
-      debugPrint("User Summary Raw Response: $response");
+      //debugPrint("User Summary Raw Response: $response");
 
       // 1. Check top-level status
       if (response["status"] == true) {
@@ -112,7 +112,7 @@ class UserController extends StateNotifier<bool> {
         // This checks if the inner data also contains a 'status' and 'data' key
         if (level1 is Map && level1["status"] == true) {
           final actualSummary = level1["data"];
-          debugPrint(" Extracted Summary Data: $actualSummary");
+          //debugPrint(" Extracted Summary Data: $actualSummary");
           return Map<String, dynamic>.from(actualSummary);
         }
 
@@ -139,7 +139,7 @@ class UserController extends StateNotifier<bool> {
       }
     } catch (e) {
       state = false;
-      debugPrint(" Summary Fetch Error: $e");
+      //debugPrint(" Summary Fetch Error: $e");
       _showError("Connection error. Could not fetch summary.");
       return null;
     }

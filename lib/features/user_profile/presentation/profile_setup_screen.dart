@@ -36,7 +36,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bool isEdited = Get.arguments?['isEdited'] ?? false;
       if (isEdited) {
-        debugPrint("call kiya re munna");
+        //debugPrint("call kiya re munna");
         final userData = ref.read(userSummaryProvider)['data'];
         if (userData != null) {
           _fullNameController.text = (userData['name'] ?? "").toString();

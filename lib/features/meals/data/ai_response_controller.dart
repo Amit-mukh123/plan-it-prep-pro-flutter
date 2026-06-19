@@ -54,7 +54,7 @@ class AiResponseController extends StateNotifier<bool> {
     Map<String, dynamic> body,
   ) async {
     state = true;
-    debugPrint("generateMealPlan a dukhe gechi");
+    //debugPrint("generateMealPlan a dukhe gechi");
     try {
       final response = await api.sendRequest(
         path: "/chat/generate-meal-plan",
@@ -62,13 +62,13 @@ class AiResponseController extends StateNotifier<bool> {
         data: body,
       );
       // 🔍 DEBUG: Log the full response so we can see what the server returns on error
-      debugPrint("===== generateMealPlan RAW RESPONSE =====");
-      debugPrint("status: ${response['status']}");
-      debugPrint("message: ${response['message']}");
-      debugPrint("data: ${response['data']}");
-      debugPrint("error: ${response['error']}");
-      debugPrint("statusCode: ${response['statusCode']}");
-      debugPrint("=========================================");
+      // debugPrint("===== generateMealPlan RAW RESPONSE =====");
+      // debugPrint("status: ${response['status']}");
+      // debugPrint("message: ${response['message']}");
+      // debugPrint("data: ${response['data']}");
+      // debugPrint("error: ${response['error']}");
+      // debugPrint("statusCode: ${response['statusCode']}");
+      // debugPrint("=========================================");
       if (response["status"] == true) {
         state = false;
 
