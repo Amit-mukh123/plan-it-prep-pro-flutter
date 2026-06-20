@@ -291,7 +291,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               'https://planit-prep-web.vercel.app/privacy-policy',
                             );
                             if (!await launchUrl(url)) {
-                              debugPrint('Could not launch $url');
+                              //debugPrint('Could not launch $url');
                             }
                           },
                           child: Text(

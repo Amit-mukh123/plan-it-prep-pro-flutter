@@ -25,6 +25,20 @@ class UserController extends StateNotifier<bool> {
     );
   }
 
+  void _showInfo(String message) {
+    Get.snackbar(
+      "Information",
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.blueAccent,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      duration: const Duration(seconds: 3),
+      icon: const Icon(Icons.info_outline, color: Colors.white),
+    );
+  }
+
   // STORE USER PROFILE DETAILS
   Future<bool> storeUserProfileDetails(Map<String, dynamic> body) async {
     state = true; // Set isLoading to true
@@ -35,7 +49,7 @@ class UserController extends StateNotifier<bool> {
         data: body,
       );
 
-      debugPrint("API Response: $response");
+      //debugPrint("API Response: $response");
 
       if (response["status"] == true) {
         state = false;
@@ -86,7 +100,7 @@ class UserController extends StateNotifier<bool> {
         method: "GET",
       );
 
-      debugPrint("User Summary Raw Response: $response");
+      //debugPrint("User Summary Raw Response: $response");
 
       // 1. Check top-level status
       if (response["status"] == true) {
@@ -98,7 +112,7 @@ class UserController extends StateNotifier<bool> {
         // This checks if the inner data also contains a 'status' and 'data' key
         if (level1 is Map && level1["status"] == true) {
           final actualSummary = level1["data"];
-          debugPrint(" Extracted Summary Data: $actualSummary");
+          //debugPrint(" Extracted Summary Data: $actualSummary");
           return Map<String, dynamic>.from(actualSummary);
         }
 
@@ -106,12 +120,26 @@ class UserController extends StateNotifier<bool> {
         return Map<String, dynamic>.from(level1);
       } else {
         state = false;
-        _showError(response["message"] ?? "Failed to fetch user summary.");
+        final isProfileSetup = response["error"]?["isProfileSetup"] ?? response["data"]?["isProfileSetup"];
+        final isConfigSetup = response["error"]?["isConfigSetup"] ?? response["data"]?["isConfigSetup"];
+        final msg = (response["message"]?.toString() ?? "").toLowerCase();
+
+        if (isProfileSetup == false || isProfileSetup == "false" || msg.contains("profile not found")) {
+          _showInfo(response["message"] ?? "Please complete your profile.");
+          // Return redirect signal — navigation handled by widget layer to avoid
+          // Get.offAllNamed failing silently on cold start (Flutter vs GetX navigator mismatch)
+          return {'__redirect': '/profile-setup'};
+        } else if (isConfigSetup == false || isConfigSetup == "false" || msg.contains("config not found")) {
+          _showInfo(response["message"] ?? "Please complete your configuration.");
+          return {'__redirect': '/user-goal'};
+        } else {
+          _showError(response["message"] ?? "Failed to fetch user summary.");
+        }
         return null;
       }
     } catch (e) {
       state = false;
-      debugPrint(" Summary Fetch Error: $e");
+      //debugPrint(" Summary Fetch Error: $e");
       _showError("Connection error. Could not fetch summary.");
       return null;
     }

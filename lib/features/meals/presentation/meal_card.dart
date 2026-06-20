@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MealCard extends StatelessWidget {
   final Map<String, dynamic> mealData;
@@ -39,7 +40,7 @@ class MealCard extends StatelessWidget {
               height: 100,
               child: Row(
                 children: [
-                  // Leading Emoji Section
+                  // Leading SVG Section
                   Container(
                     width: 90,
                     height: double.infinity,
@@ -47,9 +48,14 @@ class MealCard extends StatelessWidget {
                       color: accentColor.withValues(alpha: 0.6),
                     ),
                     child: Center(
-                      child: Text(
-                        mealData['emoji']?.toString() ?? '🍽️',
-                        style: const TextStyle(fontSize: 38),
+                      child: SvgPicture.asset(
+                        _getMealSvg(mealData['mealType']?.toString()),
+                        width: 38,
+                        height: 38,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF1D1D1D),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -124,6 +130,20 @@ class MealCard extends StatelessWidget {
     } catch (e) {
       return const Color(0xFFE0E0E0);
     }
+  }
+
+  String _getMealSvg(String? mealType) {
+    final type = mealType?.toLowerCase() ?? '';
+    if (type.contains('breakfast')) {
+      return 'assets/svgs/breakfast.svg';
+    } else if (type.contains('lunch')) {
+      return 'assets/svgs/lunch.svg';
+    } else if (type.contains('dinner')) {
+      return 'assets/svgs/dinner.svg';
+    } else if (type.contains('snack')) {
+      return 'assets/svgs/snack.svg';
+    }
+    return 'assets/svgs/default_meal.svg';
   }
 }
 
