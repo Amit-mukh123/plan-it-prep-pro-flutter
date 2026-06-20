@@ -28,9 +28,10 @@ class _HealthGoalsScreenState extends ConsumerState<HealthGoalsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bool isEdited = Get.arguments?['isEdited'] ?? false;
       if (isEdited) {
-        final userData = ref.read(userSummaryProvider)['data'];
+        final userData = ref.read(userSummaryProvider)['data'] ?? {};
+        final config = userData['config'];
         final String savedGoal =
-            userData['config']?['answers']?['health_goal'] ?? "";
+            (config is Map) ? (config['answers']?['health_goal']?.toString() ?? "") : "";
 
         setState(() {
           if (savedGoal.isNotEmpty) {

@@ -15,7 +15,6 @@ import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
 import 'package:ileum/features/meals/presentation/meal_card.dart';
 import 'package:ileum/features/meals/presentation/change_meal_sheet.dart';
-import 'package:ileum/core/common/emoji_decoder.dart';
 
 // ─── SAFE PARSING HELPERS ──────────────────────────────────────────
 
@@ -111,7 +110,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .read(aiResponseControllerProvider.notifier)
         .generateMealPlan(body);
 
-    if (response != null && mounted) {
+    if (!mounted) return;
+
+    // Handle redirect signals returned from the controller.
+    // IMPORTANT: Use Navigator.of(context) NOT Get.offAllNamed here.
+    // The SplashScreen pushes /main-shell using Flutter's root Navigator
+    // (Navigator.of(context).pushReplacementNamed). On cold start, GetX's
+    // internal navigator and Flutter's navigator are two separate stacks.
+    // Get.offAllNamed only touches GetX's stack and silently does nothing
+    // when the current route was pushed via Flutter's Navigator.
+    if (response != null && response['__redirect'] != null) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        response['__redirect'] as String,
+        (route) => false,
+      );
+      return;
+    }
+
+    if (response != null) {
       setState(() {
         _mealPlanData = response;
       });
@@ -137,7 +153,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .read(userControllerProvider.notifier)
         .getUserSummary();
 
-    if (summary != null && mounted) {
+    if (!mounted) return;
+
+    // Handle redirect signal — use Flutter's Navigator (not Get.offAllNamed)
+    // because SplashScreen pushed /main-shell via Flutter's root Navigator.
+    if (summary != null && summary['__redirect'] != null) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        summary['__redirect'] as String,
+        (route) => false,
+      );
+      return;
+    }
+
+    if (summary != null) {
       // 1. Parse the total calories safely from the nested config
       // final int parsedTotalCalories = safeInt(
       //   summary["config"]?["answers"]?["target_calorie"] ?? 2000,
@@ -359,9 +387,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Column(
         children: meals.map((rawMeal) {
           final sanitizedMeal = Map<String, dynamic>.from(rawMeal);
-          
-          // Decode malformed AI emoji strings using the high-tech decoder
-          sanitizedMeal['emoji'] = EmojiDecoder.decode(rawMeal['emoji']?.toString());
 
           sanitizedMeal['calories'] = safeInt(rawMeal['calories']);
           sanitizedMeal['protein'] = safeInt(rawMeal['protein']);
