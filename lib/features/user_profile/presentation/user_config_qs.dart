@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:country_state_city/country_state_city.dart' as csc;
 import 'package:ileum/features/user_profile/data/user_provider.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/features/user_profile/data/user_summary_state_provider.dart';
@@ -18,6 +20,14 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
   int _currentIndex = 0;
   final Map<String, dynamic> _answers = {};
   final TextEditingController _otherAllergyController = TextEditingController();
+  String? _selectedCountry;
+  String? _selectedState;
+  String? _selectedCity;
+  String? _selectedCountryCode;
+  bool _isLocationLoading = false;
+  List<csc.Country> _countries = [];
+  List<csc.State> _states = [];
+  List<csc.City> _cities = [];
 
   final List<Map<String, dynamic>> _questions = [
     {
@@ -42,6 +52,12 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
         {"text": "High-protein", "icon": Icons.fitness_center_rounded},
         {"text": "Balanced", "icon": Icons.scale_rounded},
       ],
+    },
+    {
+      "id": "location",
+      "question": "Which country, state, and city are you in?",
+      "type": "location_picker",
+      "options": [],
     },
     {
       "id": "meals_per_day",
@@ -143,6 +159,9 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
         if (existingAnswers != null) {
           setState(() {
             _answers.addAll(existingAnswers);
+            _selectedCountry = _cleanString(existingAnswers['country']);
+            _selectedState = _cleanString(existingAnswers['state']);
+            _selectedCity = _cleanString(existingAnswers['city']);
 
             // Check if allergies contain something not in the standard list to fill "Others"
             String allergyStr = _answers['allergies'] ?? "";
@@ -163,7 +182,189 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
           });
         }
       }
+
+      _loadLocationData();
     });
+  }
+
+  @override
+  void dispose() {
+    _otherAllergyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadLocationData() async {
+    if (_isLocationLoading) {
+      return;
+    }
+
+    setState(() {
+      _isLocationLoading = true;
+    });
+
+    final countries = await csc.getAllCountries();
+    countries.sort((left, right) => left.name.compareTo(right.name));
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _countries = countries;
+      _isLocationLoading = false;
+    });
+
+    await _syncLocationLists();
+  }
+
+  Future<void> _syncLocationLists() async {
+    final country = _findCountryByName(_selectedCountry);
+    if (country == null) {
+      return;
+    }
+
+    _selectedCountryCode = country.isoCode;
+
+    final states = await csc.getStatesOfCountry(country.isoCode);
+    states.sort((left, right) => left.name.compareTo(right.name));
+
+    if (!mounted) {
+      return;
+    }
+
+    final selectedState = _findStateByName(states, _selectedState);
+    final nextStateCode = selectedState?.isoCode;
+
+    List<csc.City> cities = [];
+    if (nextStateCode != null) {
+      cities = await csc.getStateCities(country.isoCode, nextStateCode);
+      cities.sort((left, right) => left.name.compareTo(right.name));
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _states = states;
+      _cities = cities;
+    });
+  }
+
+  csc.Country? _findCountryByName(String? name) {
+    if (name == null) {
+      return null;
+    }
+
+    for (final country in _countries) {
+      if (country.name.toLowerCase() == name.toLowerCase()) {
+        return country;
+      }
+    }
+    return null;
+  }
+
+  csc.State? _findStateByName(List<csc.State> states, String? name) {
+    if (name == null) {
+      return null;
+    }
+
+    for (final state in states) {
+      if (state.name.toLowerCase() == name.toLowerCase()) {
+        return state;
+      }
+    }
+    return null;
+  }
+
+  String? _cleanString(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
+  }
+
+  void _handleLocationChange({String? country, String? state, String? city}) {
+    setState(() {
+      if (country != null) {
+        _selectedCountry = country.trim().isEmpty ? null : country.trim();
+        _answers['country'] = _selectedCountry ?? '';
+        _selectedState = null;
+        _selectedCity = null;
+        _selectedCountryCode = _findCountryByName(_selectedCountry)?.isoCode;
+        _states = [];
+        _cities = [];
+        _answers.remove('state');
+        _answers.remove('city');
+      }
+
+      if (state != null) {
+        _selectedState = state.trim().isEmpty ? null : state.trim();
+        if (_selectedState == null) {
+          _answers.remove('state');
+        } else {
+          _answers['state'] = _selectedState;
+        }
+        _selectedCity = null;
+        _cities = [];
+        _answers.remove('city');
+      }
+
+      if (city != null) {
+        _selectedCity = city.trim().isEmpty ? null : city.trim();
+        if (_selectedCity == null) {
+          _answers.remove('city');
+        } else {
+          _answers['city'] = _selectedCity;
+        }
+      }
+    });
+
+    if (country != null) {
+      unawaited(_syncLocationLists());
+      return;
+    }
+
+    if (state != null && _selectedCountryCode != null) {
+      final selectedState = _findStateByName(_states, _selectedState);
+      if (selectedState != null) {
+        unawaited(_loadCitiesForState(selectedState.isoCode));
+      }
+    }
+  }
+
+  Future<void> _loadCitiesForState(String stateCode) async {
+    if (_selectedCountryCode == null) {
+      return;
+    }
+
+    final cities = await csc.getStateCities(_selectedCountryCode!, stateCode);
+    cities.sort((left, right) => left.name.compareTo(right.name));
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _cities = cities;
+    });
+  }
+
+  bool _canProceed(Map<String, dynamic> question) {
+    if (question['type'] == 'location_picker') {
+      return (_selectedCountry ?? '').isNotEmpty &&
+          (_selectedState ?? '').isNotEmpty &&
+          (_selectedCity ?? '').isNotEmpty;
+    }
+
+    final dynamic selectedValue = _answers[question['id']];
+    if (selectedValue is String) {
+      return selectedValue.isNotEmpty;
+    }
+    if (selectedValue is List) {
+      return selectedValue.isNotEmpty;
+    }
+    return selectedValue != null;
   }
 
   void _handleSelection(String questionId, String type, dynamic option) {
@@ -278,6 +479,7 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
     final currentQuestion = _questions[_currentIndex];
     final progress = (_currentIndex + 1) / _questions.length;
     final selectedValue = _answers[currentQuestion['id']];
+    final canProceed = _canProceed(currentQuestion);
     final isLoading = ref.watch(userControllerProvider);
 
     return Scaffold(
@@ -333,65 +535,101 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      ...List.generate(currentQuestion['options'].length, (
-                        index,
-                      ) {
-                        final option = currentQuestion['options'][index];
-                        bool isSelected = false;
-
-                        if (currentQuestion['type'] == "mcq_single") {
-                          isSelected = selectedValue == option['text'];
-                        } else if (currentQuestion['type'].toString().contains(
-                          "mcq_multi_csv",
-                        )) {
-                          isSelected =
-                              (selectedValue as String?)
-                                  ?.split(', ')
-                                  .contains(option['text']) ??
-                              false;
-                        } else if (currentQuestion['type'] == "mcq_multi") {
-                          isSelected =
-                              (selectedValue as List?)?.contains(
-                                option['value'],
-                              ) ??
-                              false;
-                        }
-
-                        return Column(
+                      if (currentQuestion['type'] == 'location_picker')
+                        Column(
                           children: [
-                            _OptionCard(
-                              text: option['text'],
-                              icon: option['icon'],
-                              isSelected: isSelected,
-                              onTap: isLoading
-                                  ? () {}
-                                  : () => _handleSelection(
-                                      currentQuestion['id'],
-                                      currentQuestion['type'],
-                                      option,
-                                    ),
+                            _LocationDropdown(
+                              label: 'Country',
+                              value: _selectedCountry,
+                              items: _countries.map((country) => country.name).toList(),
+                              enabled: !_isLocationLoading && _countries.isNotEmpty,
+                              hint: _isLocationLoading ? 'Loading countries...' : 'Select country',
+                              onChanged: (value) => _handleLocationChange(country: value),
                             ),
-                            if (option['text'] == "Others" && isSelected)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: TextField(
-                                  controller: _otherAllergyController,
-                                  decoration: InputDecoration(
-                                    hintText: "Enter allergy name",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: AppColors.primary,
+                            const SizedBox(height: 12),
+                            _LocationDropdown(
+                              label: 'State',
+                              value: _selectedState,
+                              items: _states.map((state) => state.name).toList(),
+                              enabled: _selectedCountry != null && _states.isNotEmpty,
+                              hint: _selectedCountry == null
+                                  ? 'Select a country first'
+                                  : 'Select state',
+                              onChanged: (value) => _handleLocationChange(state: value),
+                            ),
+                            const SizedBox(height: 12),
+                            _LocationDropdown(
+                              label: 'City',
+                              value: _selectedCity,
+                              items: _cities.map((city) => city.name).toList(),
+                              enabled: _selectedState != null && _cities.isNotEmpty,
+                              hint: _selectedState == null
+                                  ? 'Select a state first'
+                                  : 'Select city',
+                              onChanged: (value) => _handleLocationChange(city: value),
+                            ),
+                          ],
+                        )
+                      else
+                        ...List.generate(currentQuestion['options'].length, (
+                          index,
+                        ) {
+                          final option = currentQuestion['options'][index];
+                          bool isSelected = false;
+
+                          if (currentQuestion['type'] == "mcq_single") {
+                            isSelected = selectedValue == option['text'];
+                          } else if (currentQuestion['type'].toString().contains(
+                            "mcq_multi_csv",
+                          )) {
+                            isSelected =
+                                (selectedValue as String?)
+                                    ?.split(', ')
+                                    .contains(option['text']) ??
+                                false;
+                          } else if (currentQuestion['type'] == "mcq_multi") {
+                            isSelected =
+                                (selectedValue as List?)?.contains(
+                                  option['value'],
+                                ) ??
+                                false;
+                          }
+
+                          return Column(
+                            children: [
+                              _OptionCard(
+                                text: option['text'],
+                                icon: option['icon'],
+                                isSelected: isSelected,
+                                onTap: isLoading
+                                    ? () {}
+                                    : () => _handleSelection(
+                                        currentQuestion['id'],
+                                        currentQuestion['type'],
+                                        option,
+                                      ),
+                              ),
+                              if (option['text'] == "Others" && isSelected)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: TextField(
+                                    controller: _otherAllergyController,
+                                    decoration: InputDecoration(
+                                      hintText: "Enter allergy name",
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: AppColors.primary,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        );
-                      }),
+                            ],
+                          );
+                        }),
                     ],
                   ),
                 ),
@@ -402,13 +640,7 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
               onBack: (_currentIndex == 0 || isLoading)
                   ? null
                   : _previousQuestion,
-              onNext:
-                  (isLoading ||
-                      selectedValue == null ||
-                      (selectedValue is String && selectedValue.isEmpty) ||
-                      (selectedValue is List && selectedValue.isEmpty))
-                  ? null
-                  : _nextQuestion,
+              onNext: (isLoading || !canProceed) ? null : _nextQuestion,
               isLast:
                   _currentIndex == _questions.length - 1 ||
                   (_questions[_currentIndex]['id'] == 'target_calorie' &&
@@ -417,6 +649,59 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                       )),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationDropdown extends StatelessWidget {
+  final String label;
+  final String? value;
+  final List<String> items;
+  final bool enabled;
+  final String hint;
+  final ValueChanged<String?> onChanged;
+
+  const _LocationDropdown({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.enabled,
+    required this.hint,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: AppColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.outlineStrong),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.outlineStrong),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: value != null && items.contains(value) ? value : null,
+          hint: Text(hint),
+          items: items
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                ),
+              )
+              .toList(),
+          onChanged: enabled ? onChanged : null,
         ),
       ),
     );

@@ -7,14 +7,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 class MealCard extends StatelessWidget {
   final Map<String, dynamic> mealData;
   final VoidCallback onTap;
-  final VoidCallback onChangeTap;
 
-  const MealCard({
-    super.key,
-    required this.mealData,
-    required this.onTap,
-    required this.onChangeTap,
-  });
+  const MealCard({super.key, required this.mealData, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +112,6 @@ class MealCard extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // Action Button Section
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: _SwapActionBtn(onTap: onChangeTap),
-                  ),
                 ],
               ),
             ),
@@ -156,36 +144,6 @@ class MealCard extends StatelessWidget {
       return 'assets/svgs/snack.svg';
     }
     return 'assets/svgs/default_meal.svg';
-  }
-}
-
-class _SwapActionBtn extends StatelessWidget {
-  final VoidCallback onTap;
-  const _SwapActionBtn({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(50),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.bg,
-          border: Border.all(
-            color: AppColors.outlineStrong.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-        child: const Icon(
-          Icons.swap_horiz_rounded,
-          size: 18,
-          color: AppColors.textSecondary,
-        ),
-      ),
-    );
   }
 }
 
