@@ -14,7 +14,6 @@ import 'package:ileum/core/common/app_data.dart';
 import 'package:ileum/core/theme/app_theme.dart';
 import 'package:ileum/core/common/common_widgets.dart';
 import 'package:ileum/features/meals/presentation/meal_card.dart';
-import 'package:ileum/features/meals/presentation/change_meal_sheet.dart';
 import 'package:ileum/core/common/emoji_decoder.dart';
 
 // ─── SAFE PARSING HELPERS ──────────────────────────────────────────
@@ -63,10 +62,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _loadMaintenance() async {
-    final response = await ref.read(apiControllerProvider).sendRequest(
-          path: "/maintenance/all",
-          method: "GET",
-        );
+    final response = await ref
+        .read(apiControllerProvider)
+        .sendRequest(path: "/maintenance/all", method: "GET");
 
     if (response["status"] != true || !mounted) {
       return;
@@ -82,8 +80,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     maintenances.sort((left, right) {
-      final leftStart = _parseMaintenanceDateTime(left is Map ? left['start_time'] : null);
-      final rightStart = _parseMaintenanceDateTime(right is Map ? right['start_time'] : null);
+      final leftStart = _parseMaintenanceDateTime(
+        left is Map ? left['start_time'] : null,
+      );
+      final rightStart = _parseMaintenanceDateTime(
+        right is Map ? right['start_time'] : null,
+      );
 
       if (leftStart == null && rightStart == null) return 0;
       if (leftStart == null) return 1;
@@ -266,7 +268,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMaintenanceBanner() {
-    final startTime = _parseMaintenanceDateTime(_maintenanceData?['start_time']);
+    final startTime = _parseMaintenanceDateTime(
+      _maintenanceData?['start_time'],
+    );
     final endTime = _parseMaintenanceDateTime(_maintenanceData?['end_time']);
 
     if (startTime == null) {
@@ -359,9 +363,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Column(
         children: meals.map((rawMeal) {
           final sanitizedMeal = Map<String, dynamic>.from(rawMeal);
-          
+
           // Decode malformed AI emoji strings using the high-tech decoder
-          sanitizedMeal['emoji'] = EmojiDecoder.decode(rawMeal['emoji']?.toString());
+          sanitizedMeal['emoji'] = EmojiDecoder.decode(
+            rawMeal['emoji']?.toString(),
+          );
 
           sanitizedMeal['calories'] = safeInt(rawMeal['calories']);
           sanitizedMeal['protein'] = safeInt(rawMeal['protein']);
@@ -375,8 +381,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return MealCard(
             mealData: sanitizedMeal,
             onTap: () => Get.toNamed('/meal-details', arguments: sanitizedMeal),
-            onChangeTap: () =>
-                ChangeMealSheet.show(context, sanitizedMeal['mealType']),
           );
         }).toList(),
       );

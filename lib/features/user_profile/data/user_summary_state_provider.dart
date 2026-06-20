@@ -26,6 +26,9 @@ final userSummaryProvider = StateProvider<Map<String, dynamic>>((ref) {
         "answers": {
           "allergies": "None",
           "food_pref": "",
+          "country": "",
+          "state": "",
+          "city": "",
           "meals_per_day": "3 meals",
           "prep_style": "Batch cooking",
           "appliances": "Stove & Oven",
