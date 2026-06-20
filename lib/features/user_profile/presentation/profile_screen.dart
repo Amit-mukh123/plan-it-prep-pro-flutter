@@ -132,22 +132,22 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // Primary Stats
-                    Row(
-                      children: [
-                        _StatCard(
-                          icon: Icons.restaurant_menu_rounded,
-                          value: "${userData['mealsDone'] ?? '0'}",
-                          label: 'Meals logged',
-                        ),
-                        const SizedBox(width: 8),
-                        _StatCard(
-                          icon: Icons.track_changes_rounded,
-                          value:
-                              "${(userData['progress'] ?? 0).toStringAsFixed(0)}%",
-                          label: 'Adherence',
-                        ),
-                      ],
-                    ),
+                    // Row(
+                    //   children: [
+                    //     _StatCard(
+                    //       icon: Icons.restaurant_menu_rounded,
+                    //       value: "${userData['mealsDone'] ?? '0'}",
+                    //       label: 'Meals logged',
+                    //     ),
+                    //     const SizedBox(width: 8),
+                    //     _StatCard(
+                    //       icon: Icons.track_changes_rounded,
+                    //       value:
+                    //           "${(userData['progress'] ?? 0).toStringAsFixed(0)}%",
+                    //       label: 'Adherence',
+                    //     ),
+                    //   ],
+                    // ),
                     const SizedBox(height: 20),
 
                     // ElevatedButton(

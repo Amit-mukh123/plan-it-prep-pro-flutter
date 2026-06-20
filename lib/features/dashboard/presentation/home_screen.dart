@@ -255,8 +255,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       // AddMealButton(
                       //   onTap: () => ChangeMealSheet.show(context, 'Snack'),
                       // ),
-                      const SectionHeader(title: 'Quick Actions'),
-                      _QuickActionsGrid(),
+                      // const SectionHeader(title: 'Quick Actions'),
+                      // _QuickActionsGrid(),
                     ],
                   ),
                 ),
@@ -281,17 +281,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: () => Get.toNamed('/notifications'),
-            behavior: HitTestBehavior.opaque,
-            child: const Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AppIconButton(icon: Icons.notifications_rounded),
-                Positioned(top: 6, right: 6, child: _NotificationBadge()),
-              ],
-            ),
-          ),
+          // GestureDetector(
+          //   onTap: () => Get.toNamed('/notifications'),
+          //   behavior: HitTestBehavior.opaque,
+          //   child: const Stack(
+          //     clipBehavior: Clip.none,
+          //     children: [
+          //       AppIconButton(icon: Icons.notifications_rounded),
+          //       Positioned(top: 6, right: 6, child: _NotificationBadge()),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );
@@ -537,11 +537,11 @@ class _SummaryCard extends StatelessWidget {
                     color: Colors.grey[50],
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 12,
-                    color: Colors.grey[400],
-                  ),
+                  // child: Icon(
+                  //   Icons.arrow_forward_ios_rounded,
+                  //   size: 12,
+                  //   color: Colors.grey[400],
+                  // ),
                 ),
               ),
             ],
