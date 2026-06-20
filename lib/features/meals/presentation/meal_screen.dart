@@ -53,40 +53,40 @@ class _MealScreenState extends ConsumerState<MealScreen>
                 children: [
                   Expanded(
                     child: Text(
-                      'Weekly Diet Plan',
+                      'Diet Plan',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                  const AppIconButton(icon: Icons.more_vert_rounded),
+                  // const AppIconButton(icon: Icons.more_vert_rounded),
                 ],
               ),
             ),
 
             // Tab bar
-            Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.outline, width: 1),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                labelColor: AppColors.primaryDark,
-                unselectedLabelColor: AppColors.textSecondary,
-                indicatorColor: AppColors.primary,
-                indicatorWeight: 2,
-                labelStyle: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: _days.map((d) => Tab(text: d)).toList(),
-              ),
-            ),
+            // Container(
+            //   decoration: const BoxDecoration(
+            //     border: Border(
+            //       bottom: BorderSide(color: AppColors.outline, width: 1),
+            //     ),
+            //   ),
+            //   child: TabBar(
+            //     controller: _tabController,
+            //     isScrollable: true,
+            //     labelColor: AppColors.primaryDark,
+            //     unselectedLabelColor: AppColors.textSecondary,
+            //     indicatorColor: AppColors.primary,
+            //     indicatorWeight: 2,
+            //     labelStyle: GoogleFonts.dmSans(
+            //       fontSize: 13,
+            //       fontWeight: FontWeight.w600,
+            //     ),
+            //     unselectedLabelStyle: GoogleFonts.dmSans(
+            //       fontSize: 13,
+            //       fontWeight: FontWeight.w600,
+            //     ),
+            //     tabs: _days.map((d) => Tab(text: d)).toList(),
+            //   ),
+            // ),
 
             // Content
             Expanded(

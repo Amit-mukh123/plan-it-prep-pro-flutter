@@ -88,10 +88,10 @@ class MealDetailScreen extends StatelessWidget {
                         icon: Icons.arrow_back_rounded,
                         onTap: () => Get.back(),
                       ),
-                      _CircleButton(
-                        icon: Icons.favorite_border_rounded,
-                        onTap: () {},
-                      ),
+                      // _CircleButton(
+                      //   icon: Icons.favorite_border_rounded,
+                      //   onTap: () {},
+                      // ),
                     ],
                   ),
                 ),
@@ -217,26 +217,26 @@ class MealDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () {},
-                  icon: const Icon(Icons.add_task_rounded),
-                  label: const Text(
-                    'Mark as Eaten',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
+              // child: SizedBox(
+              //   width: double.infinity,
+              //   height: 54,
+              //   child: ElevatedButton.icon(
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: AppColors.primary,
+              //       foregroundColor: Colors.white,
+              //       elevation: 0,
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(16),
+              //       ),
+              //     ),
+              //     onPressed: () {},
+              //     icon: const Icon(Icons.add_task_rounded),
+              //     label: const Text(
+              //       'Mark as Eaten',
+              //       style: TextStyle(fontWeight: FontWeight.bold),
+              //     ),
+              //   ),
+              // ),
             ),
           ],
         ),

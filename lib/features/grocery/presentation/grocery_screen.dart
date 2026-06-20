@@ -13,9 +13,6 @@ class GroceryScreen extends ConsumerStatefulWidget {
 }
 
 class _GroceryScreenState extends ConsumerState<GroceryScreen> {
-  // Local state to keep track of checked items
-  final Map<String, bool> _purchasedStatus = {};
-
   @override
   Widget build(BuildContext context) {
     final mealPlan = ref.watch(mealPlanStateProvider);
@@ -30,8 +27,6 @@ class _GroceryScreenState extends ConsumerState<GroceryScreen> {
       }
       groupedItems[category]!.add(item);
     }
-
-    final int checkedCount = _purchasedStatus.values.where((v) => v).length;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -50,7 +45,7 @@ class _GroceryScreenState extends ConsumerState<GroceryScreen> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                  const AppIconButton(icon: Icons.share_rounded),
+                  // const AppIconButton(icon: Icons.share_rounded),
                 ],
               ),
             ),
@@ -62,64 +57,64 @@ class _GroceryScreenState extends ConsumerState<GroceryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Search
-                    Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search_rounded,
-                            size: 20,
-                            color: AppColors.textTertiary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search items…',
-                                hintStyle: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  color: AppColors.textTertiary,
-                                ),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                filled: false,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    // Container(
+                    //   height: 44,
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.surfaceVariant,
+                    //     borderRadius: BorderRadius.circular(100),
+                    //   ),
+                    //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                    //   child: Row(
+                    //     children: [
+                    //       const Icon(
+                    //         Icons.search_rounded,
+                    //         size: 20,
+                    //         color: AppColors.textTertiary,
+                    //       ),
+                    //       const SizedBox(width: 8),
+                    //       Expanded(
+                    //         child: TextField(
+                    //           decoration: InputDecoration(
+                    //             hintText: 'Search items…',
+                    //             hintStyle: GoogleFonts.dmSans(
+                    //               fontSize: 14,
+                    //               color: AppColors.textTertiary,
+                    //             ),
+                    //             border: InputBorder.none,
+                    //             enabledBorder: InputBorder.none,
+                    //             focusedBorder: InputBorder.none,
+                    //             filled: false,
+                    //             contentPadding: EdgeInsets.zero,
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 12),
 
                     // Count row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${rawItems.length} items · $checkedCount checked',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        // GestureDetector(
-                        //   onTap: () => setState(() => _purchasedStatus.clear()),
-                        //   child: Text(
-                        //     'Clear done',
-                        //     style: GoogleFonts.dmSans(
-                        //       fontSize: 13,
-                        //       fontWeight: FontWeight.w600,
-                        //       color: AppColors.primaryDark,
-                        //     ),
-                        //   ),
-                        // ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //   children: [
+                    //     Text(
+                    //       '${rawItems.length} items · $checkedCount checked',
+                    //       style: Theme.of(context).textTheme.bodyMedium,
+                    //     ),
+                    //     // GestureDetector(
+                    //     //   onTap: () => setState(() => _purchasedStatus.clear()),
+                    //     //   child: Text(
+                    //     //     'Clear done',
+                    //     //     style: GoogleFonts.dmSans(
+                    //     //       fontSize: 13,
+                    //     //       fontWeight: FontWeight.w600,
+                    //     //       color: AppColors.primaryDark,
+                    //     //     ),
+                    //     //   ),
+                    //     // ),
+                    //   ],
+                    // ),
+                    // const SizedBox(height: 12),
 
                     // Items card rendering from Grouped logic
                     if (rawItems.isEmpty)
@@ -142,16 +137,10 @@ class _GroceryScreenState extends ConsumerState<GroceryScreen> {
                                 _CategoryLabel(entry.key),
                                 ...entry.value.map((item) {
                                   final itemName = item['item'] ?? 'Unknown';
-                                  final isPurchased =
-                                      _purchasedStatus[itemName] ?? false;
 
                                   return _GroceryRow(
                                     name: itemName,
                                     quantity: item['quantity'] ?? '',
-                                    isPurchased: isPurchased,
-                                    onToggle: () => setState(() {
-                                      _purchasedStatus[itemName] = !isPurchased;
-                                    }),
                                   );
                                 }),
                               ],
@@ -162,18 +151,18 @@ class _GroceryScreenState extends ConsumerState<GroceryScreen> {
                     const SizedBox(height: 16),
 
                     // Add Item button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.add_rounded),
-                        label: Text(
-                          'Add Item',
-                          style: GoogleFonts.dmSans(fontSize: 13),
-                        ),
-                      ),
-                    ),
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   height: 44,
+                    //   child: ElevatedButton.icon(
+                    //     onPressed: () {},
+                    //     icon: const Icon(Icons.add_rounded),
+                    //     label: Text(
+                    //       'Add Item',
+                    //       style: GoogleFonts.dmSans(fontSize: 13),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -209,14 +198,10 @@ class _CategoryLabel extends StatelessWidget {
 class _GroceryRow extends StatelessWidget {
   final String name;
   final String quantity;
-  final bool isPurchased;
-  final VoidCallback onToggle;
 
   const _GroceryRow({
     required this.name,
     required this.quantity,
-    required this.isPurchased,
-    required this.onToggle,
   });
 
   @override
@@ -228,32 +213,6 @@ class _GroceryRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: onToggle,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: isPurchased ? AppColors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: isPurchased
-                      ? AppColors.primary
-                      : AppColors.outlineStrong,
-                  width: 2,
-                ),
-              ),
-              child: isPurchased
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,13 +221,10 @@ class _GroceryRow extends StatelessWidget {
                   name,
                   style: GoogleFonts.dmSans(
                     fontSize: 15,
-                    color: isPurchased
-                        ? AppColors.textTertiary
-                        : AppColors.textPrimary,
-                    decoration: isPurchased ? TextDecoration.lineThrough : null,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                Text(quantity, style: Theme.of(context).textTheme.bodySmall),
+                // Text(quantity, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
