@@ -28,7 +28,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   final _diets = ['Vegetarian', 'Non-Veg', 'Vegan'];
   final _dietIcons = [Icons.spa_rounded, Icons.egg_rounded, Icons.eco_rounded];
-  final _genders = ['Male', 'Female', 'Other', 'Prefer not to say'];
+  final _genders = ['Male', 'Female', 'Other'];
 
   @override
   void initState() {
@@ -47,9 +47,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             userData['target_weight'] ?? "",
           ).toString();
 
-          final String gender = userData['gender'] ?? "";
-          if (_genders.contains(gender)) {
-            setState(() => _selectedGender = gender);
+          final String gender = (userData['gender'] ?? "").toString();
+          final String? matchedGender = _genders.cast<String?>().firstWhere(
+            (g) => g!.toLowerCase() == gender.toLowerCase(),
+            orElse: () => null,
+          );
+          if (matchedGender != null) {
+            setState(() => _selectedGender = matchedGender);
           }
 
           final String diet = userData['dietType'] ?? "";
@@ -177,7 +181,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (isSuccess) {
       final bool isEdited = Get.arguments?['isEdited'] ?? false;
       if (isEdited) {
-        Get.offAllNamed('/main-shell');
+        Get.offAllNamed('/main-shell',arguments: {'shouldRefreshMeals': true});
       } else {
         Get.offNamed('/user-goal');
       }
@@ -262,7 +266,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               const _Label('Gender'),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                initialValue: _selectedGender,
+                value: _selectedGender,
                 items: _genders.map((String gender) {
                   return DropdownMenuItem(value: gender, child: Text(gender));
                 }).toList(),

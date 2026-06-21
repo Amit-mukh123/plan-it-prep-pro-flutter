@@ -214,6 +214,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 (summary["progress"] ?? state["data"]?["progress"] ?? 0.0)
                     .toDouble(),
             "name": summary["name"] ?? state["data"]?["name"],
+            "gender": summary["gender"] ?? state["data"]?["gender"],
             "age": summary["age"] ?? state["data"]?["age"],
             "weight": summary["weight"] ?? state["data"]?["weight"],
             "height": summary["height"] ?? state["data"]?["height"],
@@ -250,7 +251,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SummaryCard(data: _summaryData),
+                      // _SummaryCard(data: _summaryData),
+                      // const SizedBox(height: 16),
+                      _MotivationCard(date: _summaryData['date']?.toString() ?? ''),
                       const SizedBox(height: 16),
                       _buildMealSectionHeader(isLoading),
                       const SizedBox(height: 8),
@@ -451,6 +454,139 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+}
+
+// ─── MOTIVATION CARD ──────────────────────────────────────────────
+
+class _MotivationCard extends ConsumerWidget {
+  final String date;
+  const _MotivationCard({required this.date});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userData = ref.watch(userSummaryProvider)['data'] ?? {};
+    final dynamic rawConfig = userData['config'];
+    final Map<String, dynamic> configMap = (rawConfig is Map<String, dynamic>)
+        ? rawConfig
+        : (rawConfig is List && rawConfig.isNotEmpty && rawConfig.first is Map)
+            ? Map<String, dynamic>.from(rawConfig.first as Map)
+            : {};
+    final String rawCalorie =
+        configMap['answers']?['target_calorie']?.toString() ?? '2000 kcal';
+    final String targetCalorie = rawCalorie.contains('(')
+        ? rawCalorie.substring(0, rawCalorie.indexOf('(')).trim()
+        : rawCalorie.trim();
+
+    final String displayDate = date.isNotEmpty
+        ? date.toUpperCase()
+        : DateFormat('EEEE, d MMM').format(DateTime.now()).toUpperCase();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            displayDate,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              letterSpacing: 1.1,
+              color: Colors.grey[400],
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: CustomPaint(
+                    size: const Size(22, 22),
+                    painter: _TargetIconPainter(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily Goal · $targetCalorie',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1D1D1D),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Hit your target — one meal at a time.',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── TARGET ICON PAINTER ──────────────────────────────────────────
+
+class _TargetIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.8;
+
+    // Outer ring
+    paint.color = AppColors.primaryDark.withValues(alpha: 0.25);
+    canvas.drawCircle(center, size.width / 2, paint);
+
+    // Middle ring
+    paint.color = AppColors.primaryDark.withValues(alpha: 0.55);
+    canvas.drawCircle(center, size.width / 3.2, paint);
+
+    // Inner ring
+    paint.color = AppColors.primaryDark;
+    canvas.drawCircle(center, size.width / 6, paint);
+
+    // Center dot
+    paint
+      ..style = PaintingStyle.fill
+      ..color = AppColors.primaryDark;
+    canvas.drawCircle(center, size.width / 12, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─── INTERNAL COMPONENTS ──────────────────────────────────────────

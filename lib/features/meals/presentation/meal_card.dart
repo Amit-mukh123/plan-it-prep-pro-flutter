@@ -95,17 +95,17 @@ class MealCard extends StatelessWidget {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              // 🔥 FIX: Explicitly convert to String to prevent TypeError
+                              // FIX: Explicitly convert to String to prevent TypeError
                               NutriBadge.cal(
                                 '${mealData['calories']?.toString() ?? '0'} kcal',
                               ),
-                              if (mealData['protein'] != null) ...[
-                                const SizedBox(width: 6),
-                                // 🔥 FIX: Ensure protein is passed as a string/expected type
-                                NutriBadge.protein(
-                                  mealData['protein'].toString(),
-                                ),
-                              ],
+                              // if (mealData['protein'] != null) ...[
+                              //   const SizedBox(width: 6),
+                              //   // FIX: Ensure protein is passed as a string/expected type
+                              //   // NutriBadge.protein(
+                              //   //   mealData['protein'].toString(),
+                              //   // ),
+                              // ],
                             ],
                           ),
                         ],
