@@ -55,17 +55,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bool shouldRefresh =
+          Get.arguments?['shouldRefreshMeals'] == true;
       _loadUserSummary();
-      _fetchMealPlan(refresh: false);
+      _fetchMealPlan(refresh: shouldRefresh);
       _loadMaintenance();
     });
   }
 
   Future<void> _loadMaintenance() async {
-    final response = await ref.read(apiControllerProvider).sendRequest(
-          path: "/maintenance/all",
-          method: "GET",
-        );
+    final response = await ref
+        .read(apiControllerProvider)
+        .sendRequest(path: "/maintenance/all", method: "GET");
 
     if (response["status"] != true || !mounted) {
       return;
@@ -81,8 +82,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     maintenances.sort((left, right) {
-      final leftStart = _parseMaintenanceDateTime(left is Map ? left['start_time'] : null);
-      final rightStart = _parseMaintenanceDateTime(right is Map ? right['start_time'] : null);
+      final leftStart = _parseMaintenanceDateTime(
+        left is Map ? left['start_time'] : null,
+      );
+      final rightStart = _parseMaintenanceDateTime(
+        right is Map ? right['start_time'] : null,
+      );
 
       if (leftStart == null && rightStart == null) return 0;
       if (leftStart == null) return 1;
@@ -164,6 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
       return;
     }
+
+    debugPrint("summary======$summary");
 
     if (summary != null) {
       // 1. Parse the total calories safely from the nested config
@@ -294,7 +301,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMaintenanceBanner() {
-    final startTime = _parseMaintenanceDateTime(_maintenanceData?['start_time']);
+    final startTime = _parseMaintenanceDateTime(
+      _maintenanceData?['start_time'],
+    );
     final endTime = _parseMaintenanceDateTime(_maintenanceData?['end_time']);
 
     if (startTime == null) {

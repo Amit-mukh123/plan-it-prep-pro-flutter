@@ -154,11 +154,11 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
                 .toList();
             if (others.isNotEmpty) {
               _otherAllergyController.text = others.join(', ');
-              // Ensure "Others" tag is in the answer for UI logic
-              if (!items.contains("Others")) {
-                items.add("Others");
-                _answers['allergies'] = items.join(', ');
-              }
+              // Keep only standard options in the list; replace custom values
+              // with the "Others" placeholder so _saveUserDetails adds them once.
+              items = items.where((i) => standardOptions.contains(i)).toList();
+              items.add('Others');
+              _answers['allergies'] = items.join(', ');
             }
           });
         }
@@ -226,12 +226,14 @@ class _QuestionnaireScreenState extends ConsumerState<QuestionnaireScreen> {
         "answers": {..._answers, "health_goal": userGoal},
       },
     };
+
+    debugPrint("finalJson======$finalJson");
     final bool isSuccess = await ref
         .read(userControllerProvider.notifier)
         .storeUserConfigDetails(finalJson);
 
     if (isSuccess) {
-      Get.offAllNamed('/main-shell');
+      Get.offAllNamed('/main-shell', arguments: {'shouldRefreshMeals': true});
     } else {
       Get.snackbar(
         "Error",
