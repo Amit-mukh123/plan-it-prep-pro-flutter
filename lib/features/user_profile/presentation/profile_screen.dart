@@ -189,13 +189,13 @@ class ProfileScreen extends ConsumerWidget {
                               }
                             },
                           ),
-                          _ClickableSettingsRow(
-                            iconBg: const Color(0xFFFEF3C7),
-                            iconColor: const Color(0xFF92400E),
-                            icon: Icons.help_outline_rounded,
-                            label: 'Help & Support',
-                            onTap: () => Get.toNamed(Routes.helpSupport),
-                          ),
+                          // _ClickableSettingsRow(
+                          //   iconBg: const Color(0xFFFEF3C7),
+                          //   iconColor: const Color(0xFF92400E),
+                          //   icon: Icons.help_outline_rounded,
+                          //   label: 'Help & Support',
+                          //   onTap: () => Get.toNamed(Routes.helpSupport),
+                          // ),
                           // Logout Button
                           GestureDetector(
                             onTap: () async {
