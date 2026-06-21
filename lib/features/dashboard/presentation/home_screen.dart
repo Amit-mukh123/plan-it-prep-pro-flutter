@@ -56,8 +56,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bool shouldRefresh =
+          Get.arguments?['shouldRefreshMeals'] == true;
       _loadUserSummary();
-      _fetchMealPlan(refresh: false);
+      _fetchMealPlan(refresh: shouldRefresh);
       _loadMaintenance();
     });
   }
@@ -168,6 +170,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
       return;
     }
+
+    debugPrint("summary======$summary");
 
     if (summary != null) {
       // 1. Parse the total calories safely from the nested config

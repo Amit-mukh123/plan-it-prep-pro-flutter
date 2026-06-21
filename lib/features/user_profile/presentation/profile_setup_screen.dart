@@ -36,7 +36,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bool isEdited = Get.arguments?['isEdited'] ?? false;
       if (isEdited) {
-        //debugPrint("call kiya re munna");
+        
         final userData = ref.read(userSummaryProvider)['data'];
         if (userData != null) {
           _fullNameController.text = (userData['name'] ?? "").toString();
@@ -108,7 +108,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
 
     final double height = double.tryParse(_heightController.text.trim()) ?? 0;
-    final double targetWeight = double.tryParse(_targetWeightController.text.trim()) ?? 0;
+    final double targetWeight =
+        double.tryParse(_targetWeightController.text.trim()) ?? 0;
 
     if (height > 0 && targetWeight > 0) {
       final safeRange = _calculateSafeWeightRange(height);
@@ -121,7 +122,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           builder: (context) {
             return AlertDialog(
               backgroundColor: AppColors.surface,
-              title: Text("Target Weight Alert", style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+              title: Text(
+                "Target Weight Alert",
+                style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
+              ),
               content: Text(
                 "Based on your height, a safe target weight is between ${minWeight.toStringAsFixed(1)} kg and ${maxWeight.toStringAsFixed(1)} kg. Are you sure you want to continue with ${targetWeight.toStringAsFixed(1)} kg?",
                 style: GoogleFonts.dmSans(),
@@ -129,11 +133,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: Text("Cancel", style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                  child: Text(
+                    "Cancel",
+                    style: GoogleFonts.dmSans(color: AppColors.textSecondary),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: Text("Continue", style: GoogleFonts.dmSans(color: AppColors.primaryDark)),
+                  child: Text(
+                    "Continue",
+                    style: GoogleFonts.dmSans(color: AppColors.primaryDark),
+                  ),
                 ),
               ],
             );
@@ -407,7 +417,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: isLoading || !_isFormValid ? null : _handleSaveProfile,
+                  onPressed: isLoading || !_isFormValid
+                      ? null
+                      : _handleSaveProfile,
                   child: isLoading
                       ? const SizedBox(
                           height: 20,
